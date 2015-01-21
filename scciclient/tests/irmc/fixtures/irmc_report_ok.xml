@@ -1,0 +1,1472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="Report.xslt"?>
+<Root Schema="2" Version="7.65F" OS="iRMC S4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ <Summary>
+  <Created>
+   <IsAdmin>true</IsAdmin>
+   <Date>2014/12/15 18:46:20</Date>
+   <BuildDuration>14</BuildDuration>
+   <Company>FUJITSU</Company>
+   <Computer>iRMC38058D</Computer>
+   <OS>iRMC S4 7.65F SDR: 3.71   ID 0356  RX300S8</OS>
+   <Domain></Domain>
+   <HostIPv4Address>10.124.196.159</HostIPv4Address>
+   <HostIPv6Address>fe80::921b:eff:fe38:58d</HostIPv6Address>
+  </Created>
+  <Errors Count="1">
+   <SystemEventlog>
+    <Message>4 important error(s) in system event log (SEL)!</Message>
+   </SystemEventlog>
+  </Errors>
+  <Warnings Count="2">
+   <SystemEventlog>
+    <Message>1 important warning(s) in system event log SEL</Message>
+   </SystemEventlog>
+   <InternalEventlog>
+    <Message>2 important warning(s) in internal event log IEL</Message>
+   </InternalEventlog>
+  </Warnings>
+  <Content>
+   <Item Name="System/BIOS"></Item>
+   <Item Name="System/Processor"></Item>
+   <Item Name="System/Memory"></Item>
+   <Item Name="System/Fans"></Item>
+   <Item Name="System/Temperatures"></Item>
+   <Item Name="System/PowerSupplies"></Item>
+   <Item Name="System/Voltages"></Item>
+   <Item Name="System/IDPROMS"></Item>
+   <Item Name="System/SensorDataRecords"></Item>
+   <Item Name="System/PCIDevices"></Item>
+   <Item Name="System/SystemEventlog"></Item>
+   <Item Name="System/InternalEventlog"></Item>
+   <Item Name="System/BootStatus"></Item>
+   <Item Name="System/ManagementControllers"></Item>
+   <Item Name="Software/ServerView/ServerViewRaid"></Item>
+  </Content>
+ </Summary>
+ <System>
+  <BIOS Schema="1">
+   <SMBIOS Version="Unknown">
+    <Type0 Name="BIOS Information" Type="0">
+     <BiosVersion>V4.6.5.4 R1.14.0 for D2939-B1x</BiosVersion>
+    </Type0>
+   </SMBIOS>
+  </BIOS>
+  <Processor Schema="1">
+   <CPU Boot="true">
+    <SocketDesignation>CPU1</SocketDesignation>
+    <Manufacturer>Intel</Manufacturer>
+    <Model>
+     <Version>Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz</Version>
+     <BrandName>Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz</BrandName>
+    </Model>
+    <Speed>2600</Speed>
+    <Status Description="ok">1</Status>
+    <CoreNumber>8</CoreNumber>
+    <LogicalCpuNumber>16</LogicalCpuNumber>
+    <QPISpeed Unit="MT/s">8000</QPISpeed>
+    <Level1CacheSize Unit="KByte">512</Level1CacheSize>
+    <Level2CacheSize Unit="KByte">2048</Level2CacheSize>
+    <Level3CacheSize Unit="KByte">20480</Level3CacheSize>
+   </CPU>
+   <CPU Boot="false">
+    <SocketDesignation>CPU2</SocketDesignation>
+    <Manufacturer>Intel</Manufacturer>
+    <Model>
+     <Version>Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz</Version>
+     <BrandName>Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz</BrandName>
+    </Model>
+    <Speed>2600</Speed>
+    <Status Description="ok">1</Status>
+    <CoreNumber>8</CoreNumber>
+    <LogicalCpuNumber>16</LogicalCpuNumber>
+    <QPISpeed Unit="MT/s">8000</QPISpeed>
+    <Level1CacheSize Unit="KByte">512</Level1CacheSize>
+    <Level2CacheSize Unit="KByte">2048</Level2CacheSize>
+    <Level3CacheSize Unit="KByte">20480</Level3CacheSize>
+   </CPU>
+  </Processor>
+  <Memory Schema="2">
+   <Installed>8192</Installed>
+   <OSAvailable></OSAvailable>
+   <OSUsed></OSUsed>
+   <Modules Count="24">
+    <Module Name="DIMM-1A" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2A" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3A" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1B" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2B" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3B" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1C" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2C" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3C" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1D" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2D" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3D" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1E" CSS="true">
+     <Status Description="ok">1</Status>
+     <Approved>true</Approved>
+     <Size>8192</Size>
+     <Type>DDR3</Type>
+     <BusFrequency Unit="MHz">1600</BusFrequency>
+     <SPD Size="256" Revision="1.3" Checksum="true">
+      <Checksum>
+       <Data>9128</Data>
+       <Calculated>9128</Calculated>
+      </Checksum>
+      <ModuleManufacturer>Micron Technology</ModuleManufacturer>
+      <ModuleManufacturingDate>2014,37</ModuleManufacturingDate>
+      <ModulePartNumber>18KSF1G72PZ-1G6E2 </ModulePartNumber>
+      <ModuleRevisionCode>12869</ModuleRevisionCode>
+      <ModuleSerialNumber AsString="2B893B0D">730413837</ModuleSerialNumber>
+      <ModuleType>RDIMM</ModuleType>
+      <DeviceType>DDR3_SDRAM</DeviceType>
+      <DeviceTechnology>1Gx4/16x11x3</DeviceTechnology>
+      <BusFrequency Unit="MHz">1600</BusFrequency>
+      <VoltageInterface>1.35V/1.5V</VoltageInterface>
+      <CASLatencies>5;6;7;8;9;10;11;</CASLatencies>
+      <DataWith>72</DataWith>
+      <NumberRanks>1</NumberRanks>
+     </SPD>
+     <ConfigStatus Description="Normal">0</ConfigStatus>
+    </Module>
+    <Module Name="DIMM-2E" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3E" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1F" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2F" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3F" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1G" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2G" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3G" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-1H" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-2H" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+    <Module Name="DIMM-3H" CSS="true">
+     <Status Description="empty">0</Status>
+    </Module>
+   </Modules>
+  </Memory>
+  <Fans Schema="1" Count="7">
+   <Fan Name="FAN1 SYS" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>5820</CurrSpeed>
+    <CurrMaxSpeed>5820</CurrMaxSpeed>
+    <NomMaxSpeed>5700</NomMaxSpeed>
+   </Fan>
+   <Fan Name="FAN2 SYS" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>5820</CurrSpeed>
+    <CurrMaxSpeed>6000</CurrMaxSpeed>
+    <NomMaxSpeed>5820</NomMaxSpeed>
+   </Fan>
+   <Fan Name="FAN3 SYS" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>5820</CurrSpeed>
+    <CurrMaxSpeed>5820</CurrMaxSpeed>
+    <NomMaxSpeed>5700</NomMaxSpeed>
+   </Fan>
+   <Fan Name="FAN4 SYS" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>5700</CurrSpeed>
+    <CurrMaxSpeed>5700</CurrMaxSpeed>
+    <NomMaxSpeed>5580</NomMaxSpeed>
+   </Fan>
+   <Fan Name="FAN5 SYS" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>6000</CurrSpeed>
+    <CurrMaxSpeed>6000</CurrMaxSpeed>
+    <NomMaxSpeed>5820</NomMaxSpeed>
+   </Fan>
+   <Fan Name="FAN PSU1" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>3600</CurrSpeed>
+    <CurrMaxSpeed>17920</CurrMaxSpeed>
+    <NomMaxSpeed>17920</NomMaxSpeed>
+   </Fan>
+   <Fan Name="FAN PSU2" CSS="true">
+    <Status Description="ok">1</Status>
+    <CurrSpeed>3680</CurrSpeed>
+    <CurrMaxSpeed>17920</CurrMaxSpeed>
+    <NomMaxSpeed>17920</NomMaxSpeed>
+   </Fan>
+  </Fans>
+  <Temperatures Schema="1" Count="19">
+   <Temperature Name="Ambient" CSS="false">
+    <Status Description="ok">6</Status>
+    <CurrValue>28</CurrValue>
+    <WarningThreshold>37</WarningThreshold>
+    <CriticalThreshold>42</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="Systemboard 1" CSS="false">
+    <Status Description="ok">6</Status>
+    <CurrValue>28</CurrValue>
+    <WarningThreshold>75</WarningThreshold>
+    <CriticalThreshold>80</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="Systemboard 2" CSS="false">
+    <Status Description="ok">6</Status>
+    <CurrValue>33</CurrValue>
+    <WarningThreshold>75</WarningThreshold>
+    <CriticalThreshold>80</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="CPU1" CSS="false">
+    <Status Description="ok">6</Status>
+    <CurrValue>37</CurrValue>
+    <WarningThreshold>82</WarningThreshold>
+    <CriticalThreshold>86</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="CPU2" CSS="false">
+    <Status Description="ok">6</Status>
+    <CurrValue>37</CurrValue>
+    <WarningThreshold>82</WarningThreshold>
+    <CriticalThreshold>86</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="MEM A" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="MEM B" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="MEM C" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="MEM D" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="MEM E" CSS="true">
+    <Status Description="ok">6</Status>
+    <CurrValue>29</CurrValue>
+    <WarningThreshold>78</WarningThreshold>
+    <CriticalThreshold>82</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="MEM F" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="MEM G" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="MEM H" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="PSU1 Inlet" CSS="true">
+    <Status Description="ok">6</Status>
+    <CurrValue>28</CurrValue>
+    <WarningThreshold>57</WarningThreshold>
+    <CriticalThreshold>61</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="PSU2 Inlet" CSS="true">
+    <Status Description="ok">6</Status>
+    <CurrValue>28</CurrValue>
+    <WarningThreshold>57</WarningThreshold>
+    <CriticalThreshold>61</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="PSU1" CSS="true">
+    <Status Description="ok">6</Status>
+    <CurrValue>53</CurrValue>
+    <WarningThreshold>102</WarningThreshold>
+    <CriticalThreshold>107</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="PSU2" CSS="true">
+    <Status Description="ok">6</Status>
+    <CurrValue>52</CurrValue>
+    <WarningThreshold>102</WarningThreshold>
+    <CriticalThreshold>107</CriticalThreshold>
+   </Temperature>
+   <Temperature Name="BBU" CSS="true">
+    <Status Description="not available">0</Status>
+   </Temperature>
+   <Temperature Name="RAID Controller" CSS="true">
+    <Status Description="ok">6</Status>
+    <CurrValue>69</CurrValue>
+    <WarningThreshold>110</WarningThreshold>
+    <CriticalThreshold>115</CriticalThreshold>
+   </Temperature>
+  </Temperatures>
+  <PowerSupplies Schema="1" Count="2">
+   <PowerSupply Name="PSU1" CSS="true">
+    <Status Description="ok">1</Status>
+    <Load>76</Load>
+   </PowerSupply>
+   <PowerSupply Name="PSU2" CSS="true">
+    <Status Description="ok">1</Status>
+    <Load>80</Load>
+   </PowerSupply>
+  </PowerSupplies>
+  <Voltages Schema="1" Count="14">
+   <Voltage Name="BATT 3.0V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>3.15</CurrValue>
+    <NomValue>3.00</NomValue>
+    <Thresholds>
+     <MinValue>2.01</MinValue>
+     <MaxValue>3.50</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="STBY 12V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>11.88</CurrValue>
+    <NomValue>12.00</NomValue>
+    <Thresholds>
+     <MinValue>11.28</MinValue>
+     <MaxValue>12.96</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="STBY 5V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>5.10</CurrValue>
+    <NomValue>5.00</NomValue>
+    <Thresholds>
+     <MinValue>4.63</MinValue>
+     <MaxValue>5.42</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="STBY 3.3V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>3.30</CurrValue>
+    <NomValue>3.30</NomValue>
+    <Thresholds>
+     <MinValue>3.02</MinValue>
+     <MaxValue>3.57</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="LAN 1.8V STBY" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>1.78</CurrValue>
+    <NomValue>1.80</NomValue>
+    <Thresholds>
+     <MinValue>1.67</MinValue>
+     <MaxValue>1.93</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="iRMC 1.5V STBY" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>1.48</CurrValue>
+    <NomValue>1.50</NomValue>
+    <Thresholds>
+     <MinValue>1.39</MinValue>
+     <MaxValue>1.61</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="LAN 1.0V STBY" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>0.98</CurrValue>
+    <NomValue>1.00</NomValue>
+    <Thresholds>
+     <MinValue>0.93</MinValue>
+     <MaxValue>1.08</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="MAIN 12V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>12.16</CurrValue>
+    <NomValue>12.00</NomValue>
+    <Thresholds>
+     <MinValue>11.31</MinValue>
+     <MaxValue>12.90</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="MAIN 5V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>4.98</CurrValue>
+    <NomValue>5.00</NomValue>
+    <Thresholds>
+     <MinValue>4.63</MinValue>
+     <MaxValue>5.42</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="MAIN 3.3V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>3.35</CurrValue>
+    <NomValue>3.30</NomValue>
+    <Thresholds>
+     <MinValue>3.02</MinValue>
+     <MaxValue>3.57</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="PCH 1.5V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>1.47</CurrValue>
+    <NomValue>1.50</NomValue>
+    <Thresholds>
+     <MinValue>1.42</MinValue>
+     <MaxValue>1.58</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="PCH 1.1V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>1.09</CurrValue>
+    <NomValue>1.10</NomValue>
+    <Thresholds>
+     <MinValue>1.02</MinValue>
+     <MaxValue>1.18</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="CPU1 1V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>0.99</CurrValue>
+    <NomValue>1.00</NomValue>
+    <Thresholds>
+     <MinValue>0.93</MinValue>
+     <MaxValue>1.07</MaxValue>
+    </Thresholds>
+   </Voltage>
+   <Voltage Name="CPU2 1V" CSS="false">
+    <Status Description="ok">1</Status>
+    <CurrValue>0.98</CurrValue>
+    <NomValue>1.00</NomValue>
+    <Thresholds>
+     <MinValue>0.93</MinValue>
+     <MaxValue>1.07</MaxValue>
+    </Thresholds>
+   </Voltage>
+  </Voltages>
+  <IDPROMS Schema="1">
+  </IDPROMS>
+  <SensorDataRecords Schema="1">
+   <SDR Nr="1" RecordID="1" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>01 00 51 01 3B 20 00 01 37 00 3B 54 01 01 85 32</Hex>
+       <ASCII><![CDATA[..Q.; ..7.;T...2]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>85 32 1B 1B 00 01 00 00 19 00 00 00 00 E0 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 A8 94 00 04 18 07 07 00 00 00 C7</Hex>
+       <ASCII><![CDATA[................]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>41 6D 62 69 65 6E 74 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[Ambient.........]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>1</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>55</ID>
+       <Instance>0</Instance>
+       <Name>Ambient</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>168</Raw>
+         <Normalized>42</Normalized>
+        </UpperCritical>
+        <LowerCritical>
+         <Raw>4</Raw>
+         <Normalized>1</Normalized>
+        </LowerCritical>
+        <UpperNonCritical>
+         <Raw>148</Raw>
+         <Normalized>37</Normalized>
+        </UpperNonCritical>
+        <LowerNonCritical>
+         <Raw>24</Raw>
+         <Normalized>6</Normalized>
+        </LowerNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="2" RecordID="2" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>02 00 51 01 3B 20 00 02 07 00 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; ....;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 50 4B 00 00 00 01 01 00 00 00 CD</Hex>
+       <ASCII><![CDATA[.....PK.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>53 79 73 74 65 6D 62 6F 61 72 64 20 31 00 00 00</Hex>
+       <ASCII><![CDATA[Systemboard 1...]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>2</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>7</ID>
+       <Instance>0</Instance>
+       <Name>Systemboard 1</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>80</Raw>
+         <Normalized>80</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>75</Raw>
+         <Normalized>75</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="3" RecordID="3" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>03 00 51 01 3B 20 00 03 07 00 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; ....;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 50 4B 00 00 00 01 01 00 00 00 CD</Hex>
+       <ASCII><![CDATA[.....PK.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>53 79 73 74 65 6D 62 6F 61 72 64 20 32 00 00 00</Hex>
+       <ASCII><![CDATA[Systemboard 2...]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>3</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>7</ID>
+       <Instance>0</Instance>
+       <Name>Systemboard 2</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>80</Raw>
+         <Normalized>80</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>75</Raw>
+         <Normalized>75</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="4" RecordID="4" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>04 00 51 01 3B 20 00 04 03 00 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; ....;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 56 52 00 01 06 01 00 00 00 00 C4</Hex>
+       <ASCII><![CDATA[.....VR.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>43 50 55 31 00 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[CPU1............]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>4</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>3</ID>
+       <Instance>0</Instance>
+       <Name>CPU1</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>86</Raw>
+         <Normalized>86</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="5" RecordID="5" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>05 00 51 01 3B 20 00 05 03 01 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; ....;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 56 52 00 01 06 01 00 00 00 00 C4</Hex>
+       <ASCII><![CDATA[.....VR.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>43 50 55 32 00 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[CPU2............]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>5</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>3</ID>
+       <Instance>1</Instance>
+       <Name>CPU2</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>86</Raw>
+         <Normalized>86</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="6" RecordID="6" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>06 00 51 01 3B 20 00 06 20 00 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; .. .;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 52 4E 00 01 06 01 01 00 00 81 C5</Hex>
+       <ASCII><![CDATA[.....RN.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>4D 45 4D 20 41 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[MEM A...........]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>6</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>32</ID>
+       <Instance>0</Instance>
+       <Name>MEM A</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>78</Raw>
+         <Normalized>78</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="7" RecordID="7" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>07 00 51 01 3B 20 00 07 20 01 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; .. .;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 52 4E 00 01 06 01 01 00 00 81 C5</Hex>
+       <ASCII><![CDATA[.....RN.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>4D 45 4D 20 42 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[MEM B...........]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>7</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>32</ID>
+       <Instance>1</Instance>
+       <Name>MEM B</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>78</Raw>
+         <Normalized>78</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="8" RecordID="8" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>08 00 51 01 3B 20 00 08 20 02 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; .. .;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 52 4E 00 01 06 01 01 00 00 81 C5</Hex>
+       <ASCII><![CDATA[.....RN.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>4D 45 4D 20 43 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[MEM C...........]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>8</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>32</ID>
+       <Instance>2</Instance>
+       <Name>MEM C</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>78</Raw>
+         <Normalized>78</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="9" RecordID="9" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>09 00 51 01 3B 20 00 09 20 03 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; .. .;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 52 4E 00 01 06 01 01 00 00 81 C5</Hex>
+       <ASCII><![CDATA[.....RN.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>4D 45 4D 20 44 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[MEM D...........]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>9</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>32</ID>
+       <Instance>3</Instance>
+       <Name>MEM D</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>78</Raw>
+         <Normalized>78</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+   <SDR Nr="10" RecordID="10" RecordType="1" RecordTypeName="Full SDR" Version="1.5" Length="64">
+    <Data Size="64">
+     <HexDump Lines="4" BytesPerLine="16">
+      <Line Offset="0">
+       <Hex>0A 00 51 01 3B 20 00 0A 20 04 3B 54 01 01 80 02</Hex>
+       <ASCII><![CDATA[..Q.; .. .;T....]]></ASCII>
+      </Line>
+      <Line Offset="16">
+       <Hex>80 32 18 18 00 01 00 00 01 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[.2..............]]></ASCII>
+      </Line>
+      <Line Offset="32">
+       <Hex>00 00 FF 00 00 52 4E 00 01 06 01 01 00 00 81 C5</Hex>
+       <ASCII><![CDATA[.....RN.........]]></ASCII>
+      </Line>
+      <Line Offset="48">
+       <Hex>4D 45 4D 20 45 00 00 00 00 00 00 00 00 00 00 00</Hex>
+       <ASCII><![CDATA[MEM E...........]]></ASCII>
+      </Line>
+     </HexDump>
+     <Decoded>
+      <Key>
+       <SensorOwner Type="IPMB">
+        <ID>20</ID>
+        <LUN>0</LUN>
+        <Channel>0</Channel>
+       </SensorOwner>
+       <SensorNumber>10</SensorNumber>
+      </Key>
+      <Entity>
+       <ID>32</ID>
+       <Instance>4</Instance>
+       <Name>MEM E</Name>
+      </Entity>
+      <Sensor>
+       <Type>1</Type>
+       <TypeName>Temperature</TypeName>
+       <BaseUnit>1</BaseUnit>
+       <ModifierUnit>0</ModifierUnit>
+       <BaseUnitName>degree C</BaseUnitName>
+       <ModifierUnitName>unspecified</ModifierUnitName>
+       <Thresholds>
+        <UpperCritical>
+         <Raw>82</Raw>
+         <Normalized>82</Normalized>
+        </UpperCritical>
+        <UpperNonCritical>
+         <Raw>78</Raw>
+         <Normalized>78</Normalized>
+        </UpperNonCritical>
+       </Thresholds>
+      </Sensor>
+     </Decoded>
+    </Data>
+   </SDR>
+  </SensorDataRecords>
+  <PCIDevices Schema="1">
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>1000</VendorId>
+     <SubVendorId>11E4</SubVendorId>
+     <DeviceId>005B</DeviceId>
+     <SubDeviceId>1734</SubDeviceId>
+     <BaseClass>Mass storage controller</BaseClass>
+     <SubClass>RAID controller</SubClass>
+    </ConfigSpace>
+    <Slot>7</Slot>
+   </Device>
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>10DF</VendorId>
+     <SubVendorId>E208</SubVendorId>
+     <DeviceId>E200</DeviceId>
+     <SubDeviceId>10DF</SubDeviceId>
+     <BaseClass>Serial bus controller</BaseClass>
+     <SubClass>Fibre Channel</SubClass>
+    </ConfigSpace>
+    <Slot>1</Slot>
+   </Device>
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>10DF</VendorId>
+     <SubVendorId>E208</SubVendorId>
+     <DeviceId>E200</DeviceId>
+     <SubDeviceId>10DF</SubDeviceId>
+     <BaseClass>Serial bus controller</BaseClass>
+     <SubClass>Fibre Channel</SubClass>
+    </ConfigSpace>
+    <Slot>1</Slot>
+   </Device>
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>8086</VendorId>
+     <SubVendorId>00A2</SubVendorId>
+     <DeviceId>1521</DeviceId>
+     <SubDeviceId>8086</SubDeviceId>
+     <BaseClass>Network controller</BaseClass>
+     <SubClass>Ethernet controller</SubClass>
+    </ConfigSpace>
+    <Slot>5</Slot>
+   </Device>
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>8086</VendorId>
+     <SubVendorId>00A2</SubVendorId>
+     <DeviceId>1521</DeviceId>
+     <SubDeviceId>8086</SubDeviceId>
+     <BaseClass>Network controller</BaseClass>
+     <SubClass>Ethernet controller</SubClass>
+    </ConfigSpace>
+    <Slot>5</Slot>
+   </Device>
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>8086</VendorId>
+     <SubVendorId>001A</SubVendorId>
+     <DeviceId>1528</DeviceId>
+     <SubDeviceId>8086</SubDeviceId>
+     <BaseClass>Network controller</BaseClass>
+     <SubClass>Ethernet controller</SubClass>
+    </ConfigSpace>
+    <Slot>6</Slot>
+   </Device>
+   <Device>
+    <ConfigSpace>
+     <Revision>1</Revision>
+     <VendorId>8086</VendorId>
+     <SubVendorId>001A</SubVendorId>
+     <DeviceId>1528</DeviceId>
+     <SubDeviceId>8086</SubDeviceId>
+     <BaseClass>Network controller</BaseClass>
+     <SubClass>Ethernet controller</SubClass>
+    </ConfigSpace>
+    <Slot>6</Slot>
+   </Device>
+  </PCIDevices>
+  <SystemEventlog Schema="1">
+   <Entry>
+    <Date>2014/12/10 10:13:40</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>160011</ErrorCode>
+    <Message>BIOS change detected</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 D4 1C 88 54 01 00 04 2B 00 6F C1 09 00</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 10:11:18</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>420020</ErrorCode>
+    <Message>Management Engine: Direct Flash update requested by the BIOS</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 46 1C 88 54 2C 00 04 DC 17 75 A0 06 00</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 10:03:11</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>160014</ErrorCode>
+    <Message>Online firmware flash: iRMC S4 reboot EEPROM 1 Version 7.65</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 5F 1A 88 54 20 00 04 EC FE 6F A1 07 41</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 09:57:50</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>160013</ErrorCode>
+    <Message>Online firmware flash EEPROM 1 Version 7.65</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 1E 19 88 54 20 00 04 EC FE 6F A0 07 41</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 09:30:31</Date>
+    <Severity>MAJOR</Severity>
+    <ErrorCode>160018</ErrorCode>
+    <Message>BIOS TFTP or HTTP/HTTPS flash failed</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 B7 12 88 54 20 00 04 EC FE 6F 03 FF FF</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 13:33:15</Date>
+    <Severity>MAJOR</Severity>
+    <ErrorCode>160018</ErrorCode>
+    <Message>BIOS TFTP or HTTP/HTTPS flash failed</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 9B A8 85 54 20 00 04 EC FE 6F 03 FF FF</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 13:30:09</Date>
+    <Severity>MAJOR</Severity>
+    <ErrorCode>160018</ErrorCode>
+    <Message>BIOS TFTP or HTTP/HTTPS flash failed</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 E1 A7 85 54 20 00 04 EC FE 6F 03 FF FF</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 13:22:18</Date>
+    <Severity>MAJOR</Severity>
+    <ErrorCode>160018</ErrorCode>
+    <Message>BIOS TFTP or HTTP/HTTPS flash failed</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 0A A6 85 54 20 00 04 EC FE 6F 03 FF FF</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 10:52:58</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>160014</ErrorCode>
+    <Message>Online firmware flash: iRMC S4 reboot EEPROM 2 Version 7.65</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 0A 83 85 54 20 00 04 EC FE 6F A1 87 41</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 10:52:54</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>160016</ErrorCode>
+    <Message>Firmware change detected Version 7.65</Message>
+    <Data Size="14">
+     <HexDump Lines="1" BytesPerLine="14">
+      <Line Offset="0">
+       <Hex>02 06 83 85 54 20 00 04 2B 00 6F 01 07 41</Hex>
+      </Line>
+     </HexDump>
+    </Data>
+   </Entry>
+  </SystemEventlog>
+  <InternalEventlog Schema="1">
+   <Entry>
+    <Date>2014/12/10 12:09:42</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300E4</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' auto-logout from 10.124.102.90]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 10:48:34</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300B1</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' login from 10.124.102.90]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 08:59:07</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300E4</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' auto-logout from 10.124.102.90]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/10 08:53:51</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300B1</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' login from 10.124.102.90]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 18:15:24</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300E4</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' auto-logout from 10.33.110.49]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 15:41:28</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300B2</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' logout from 10.33.110.148]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 15:40:39</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300B1</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser http connection user 'admin' login from 10.33.110.148]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 14:33:44</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>2300B8</ErrorCode>
+    <Message><![CDATA[iRMC S4 Browser AVR connection user 'admin' AVR Session finished from 10.33.110.49]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 13:33:34</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>01002B</ErrorCode>
+    <Message><![CDATA[Remote-initiated power up: by 'admin' from 10.33.110.49]]></Message>
+   </Entry>
+   <Entry>
+    <Date>2014/12/08 13:32:59</Date>
+    <Severity>INFO</Severity>
+    <ErrorCode>01002B</ErrorCode>
+    <Message><![CDATA[Remote-initiated power up: by 'admin' from 10.33.110.49]]></Message>
+   </Entry>
+  </InternalEventlog>
+  <BootStatus Schema="1">
+   <PowerOnReason AsString="Power Switch">1</PowerOnReason>
+   <PowerOffReason AsString="Power Switch">1</PowerOffReason>
+   <PowerFailBehavior AsString="as before">0</PowerFailBehavior>
+  </BootStatus>
+  <ManagementControllers Schema="1">
+   <iRMC Name="iRMC S4">
+    <Firmware>7.65F</Firmware>
+    <IPAddress>10.124.196.159</IPAddress>
+    <IPSubnetMask>255.255.255.0</IPSubnetMask>
+    <IPGateway>10.124.196.1</IPGateway>
+    <MACAddress>90-1B-0E-38-05-8D</MACAddress>
+    <ManagementLANPort>0</ManagementLANPort>
+    <IPNominalSpeed>0</IPNominalSpeed>
+   </iRMC>
+  </ManagementControllers>
+ </System>
+ <Software>
+  <ServerView>
+   <ServerViewRaid Schema="1" Installed="true">
+    <Version></Version>
+    <amEMSV Version="2" ReadSocket="permanent">
+     <System>
+      <Name></Name>
+      <Vendor></Vendor>
+      <OSProduct></OSProduct>
+      <OSEdition></OSEdition>
+      <Version></Version>
+      <OSServicePack></OSServicePack>
+      <Build></Build>
+      <OSFeatures></OSFeatures>
+      <ProcArchitecture></ProcArchitecture>
+      <CAS></CAS>
+      <LDAP></LDAP>
+      <Adapter Nr="0" Type="SAS" Name="FTS RAID Ctrl SAS 6G 1GB (D3116C) (0)" NumberOfPorts="8" RealPortCount="2">
+       <AdapterNumber>0</AdapterNumber>
+       <Name>FTS RAID Ctrl SAS 6G 1GB (D3116C) (0)</Name>
+       <Vendor>Fujitsu Technology Solutions</Vendor>
+       <Product>RAID Ctrl SAS 6G 1GB (D3116C)</Product>
+       <SerialNumber>0000000045118882</SerialNumber>
+       <SASAddress>0x5003005701AB2E40</SASAddress>
+       <PortCount>8</PortCount>
+       <PCIBus></PCIBus>
+       <PCIDevice></PCIDevice>
+       <PCIFunction></PCIFunction>
+       <DriverName></DriverName>
+       <DriverVersion></DriverVersion>
+       <UEFIDriverVersion></UEFIDriverVersion>
+       <Protocol>SAS600</Protocol>
+       <FWPackageVersion>23.9.0-0033</FWPackageVersion>
+       <FirmwareVersion></FirmwareVersion>
+       <FirmwareBuildTime></FirmwareBuildTime>
+       <BIOSVersion></BIOSVersion>
+       <BIOSBuildTime></BIOSBuildTime>
+       <MemorySize>1024</MemorySize>
+       <FlashROMSize>16</FlashROMSize>
+       <AlarmPresent>true</AlarmPresent>
+       <NVRAMPresent>true</NVRAMPresent>
+       <NVRAMSize>32</NVRAMSize>
+       <CorrErrorCount>0</CorrErrorCount>
+       <UncorrErrorCount>0</UncorrErrorCount>
+       <Activity>Idle</Activity>
+       <InconsistPolicy>Make Data Consistent</InconsistPolicy>
+       <SMARTSupport>Enabled</SMARTSupport>
+       <PollingInterval minValue="1" maxValue="65535" stepping="1">300</PollingInterval>
+       <PatrolReadMode>Automatic</PatrolReadMode>
+       <PatrolReadMaxPD minValue="0" maxValue="255" stepping="1">255</PatrolReadMaxPD>
+       <ContinuousPatrolling>No</ContinuousPatrolling>
+       <PatrolReadDelay minValue="4" maxValue="1016" stepping="4">168</PatrolReadDelay>
+       <PatrolRdIterations>0</PatrolRdIterations>
+       <PatrolReadRate minValue="0" maxValue="100" stepping="1">20</PatrolReadRate>
+       <AlarmControl>Disabled</AlarmControl>
+       <RebuildRate minValue="0" maxValue="100" stepping="1">30</RebuildRate>
+       <BGIRate minValue="0" maxValue="100" stepping="1">30</BGIRate>
+       <MDCRate minValue="0" maxValue="100" stepping="1">30</MDCRate>
+       <MigrationRate minValue="0" maxValue="100" stepping="1">30</MigrationRate>
+       <AutoFlushFreq minValue="0" maxValue="100" stepping="1">4</AutoFlushFreq>
+       <DelayBetweenSpins minValue="0" maxValue="6" stepping="1">6</DelayBetweenSpins>
+       <DevicesPerSpins minValue="1" maxValue="8" stepping="1">2</DevicesPerSpins>
+       <AutoRebuild>Enabled</AutoRebuild>
+       <CoercionMode>None</CoercionMode>
+       <AbortMDCOnError>Disabled</AbortMDCOnError>
+       <InitMode>Normal Initialization</InitMode>
+       <CopyBack>Enabled</CopyBack>
+       <CopybackOnSMARTError>Enabled</CopybackOnSMARTError>
+       <CorrectMediaErrorsPR>Enabled</CorrectMediaErrorsPR>
+       <CopybackSSDPnSMARTErr>Enabled</CopybackSSDPnSMARTErr>
+       <PROnSSD>Disabled</PROnSSD>
+       <SpindownUnconfDisks>Enabled</SpindownUnconfDisks>
+       <SpindownHotSpare>Enabled</SpindownHotSpare>
+       <SpndownDelayTime minValue="30" maxValue="1440" stepping="1">30</SpndownDelayTime>
+       <MDCScheduleMode>Disabled</MDCScheduleMode>
+       <NCQ>Enabled</NCQ>
+       <Status>OK</Status>
+       <DeviceID>005B</DeviceID>
+       <SubDeviceID>11E4</SubDeviceID>
+       <VendorID>1000</VendorID>
+       <SubVendorID>1734</SubVendorID>
+       <BusType>PCIe</BusType>
+       <MaxLogDrives>64</MaxLogDrives>
+       <MaxPhysDevices>256</MaxPhysDevices>
+       <BBUPresent>false</BBUPresent>
+       <UARTPresent>true</UARTPresent>
+       <Ports Number="2">
+        <Port Nr="0" Type="SAS" Name="Port 0 - 3">
+         <Name>Port 0 - 3</Name>
+         <Enclosure Name="FTS COR Unknown (1)">
+          <EnclosureNumber>1</EnclosureNumber>
+          <Vendor>FTS COR</Vendor>
+          <Product>SAS20BP_12_25HD</Product>
+          <HardwareVersion>0700</HardwareVersion>
+          <Name>FTS COR Unknown (1)</Name>
+          <Status>OK</Status>
+          <SASAddress>0x500605B0000272BD</SASAddress>
+          <Processor Name="FTS COR SAS20BP_12_25HD (1:1)">
+           <PortNumber>0</PortNumber>
+           <DeviceNumber>7</DeviceNumber>
+           <EnclosureNumber>1</EnclosureNumber>
+           <Name>FTS COR SAS20BP_12_25HD (1:1)</Name>
+           <Type>SES</Type>
+           <Vendor>FTS COR</Vendor>
+           <Product>SAS20BP_12_25HD</Product>
+           <SerialNumber>x36-254.7.0.0</SerialNumber>
+           <FirmwareVersion>0700</FirmwareVersion>
+           <Status>OK</Status>
+          </Processor>
+          <PhysicalDrive DeviceNumber="9" Name="TOSHIBA PX02SMF020 (1:0)" DeviceStatus="1" ComponentStatus="1">
+           <PortNumber>0</PortNumber>
+           <Name>TOSHIBA PX02SMF020 (1:0)</Name>
+           <Vendor>TOSHIBA</Vendor>
+           <Product>PX02SMF020</Product>
+           <Type>SAS</Type>
+           <FirmwareVersion>5203</FirmwareVersion>
+           <SerialNumber>9440A01OTB9A</SerialNumber>
+           <SASAddress>0x50000395CC88808A</SASAddress>
+           <TransferWidth>1</TransferWidth>
+           <DeviceNumber>9</DeviceNumber>
+           <Slot>0</Slot>
+           <EnclosureNumber>1</EnclosureNumber>
+           <PhysicalSize>190782</PhysicalSize>
+           <ConfigurableSize>190240</ConfigurableSize>
+           <Status>Available</Status>
+           <Activity>Idle</Activity>
+           <ForeignConfig>false</ForeignConfig>
+           <MediaErrorCount>0</MediaErrorCount>
+           <MiscErrors>0</MiscErrors>
+           <PFACount>0</PFACount>
+           <MediaType>SSD</MediaType>
+           <PowerStatus>Active</PowerStatus>
+           <Temperature>34</Temperature>
+          </PhysicalDrive>
+         </Enclosure>
+        </Port>
+        <Port Nr="1" Type="SAS" Name="Port 4 - 7">
+         <Name>Port 4 - 7</Name>
+        </Port>
+       </Ports>
+      </Adapter>
+      <Multiplexer></Multiplexer>
+     </System>
+    </amEMSV>
+   </ServerViewRaid>
+  </ServerView>
+ </Software>
+</Root>
