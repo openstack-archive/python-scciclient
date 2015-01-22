@@ -23,8 +23,7 @@ import mock
 import requests
 import testtools
 
-from ironic.common import exception
-from ironic.drivers.modules.irmc import scci
+from scciclient.irmc import scci
 
 
 class SCCITestCase(testtools.TestCase):
@@ -123,7 +122,7 @@ class SCCITestCase(testtools.TestCase):
                               'https://github.com', verify=False)
         self.assertEqual("'member_descriptor' object is not callable", str(e))
 
-    @mock.patch('ironic.drivers.modules.irmc.scci.requests')
+    @mock.patch('scciclient.irmc.scci.requests')
     def test_scci_cmd_protocol_https_ok(self, mock_requests):
         https_port = 443
         mock_requests.post.return_value = mock.Mock(
@@ -203,7 +202,7 @@ class SCCITestCase(testtools.TestCase):
                                body="401 Unauthorized",
                                status=401)
 
-        e = self.assertRaises(exception.IRMCClientError,
+        e = self.assertRaises(scci.SCCIClientError,
                               scci.scci_cmd,
                               self.irmc_address,
                               self.irmc_username,
@@ -214,13 +213,12 @@ class SCCITestCase(testtools.TestCase):
                               client_timeout=self.irmc_client_timeout)
 
         self.assertEqual(
-            'iRMC SCCI %(operation)s failed. Reason: %(error)s' %
-            {'operation': scci.POWER_ON, 'error': 'http status = 401'},
+            'HTTP PROTOCOL ERROR, STATUS CODE = 401',
             str(e))
 
     def test_scci_cmd_protocol_ng(self):
         ssh_port = 22
-        e = self.assertRaises(exception.InvalidParameterValue,
+        e = self.assertRaises(scci.SCCIInvalidInputError,
                               scci.scci_cmd,
                               self.irmc_address,
                               self.irmc_username,
@@ -236,7 +234,7 @@ class SCCITestCase(testtools.TestCase):
 
     def test_scci_cmd_auth_method_ng(self):
         unknown_auth_method = 'unknown'
-        e = self.assertRaises(exception.InvalidParameterValue,
+        e = self.assertRaises(scci.SCCIInvalidInputError,
                               scci.scci_cmd,
                               self.irmc_address,
                               self.irmc_username,
@@ -277,13 +275,11 @@ class SCCITestCase(testtools.TestCase):
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
 
-        e = self.assertRaises(exception.IRMCClientError,
+        e = self.assertRaises(scci.SCCIClientError,
                               client,
                               scci.POWER_ON)
         self.assertEqual(
-            'iRMC SCCI %(operation)s failed. Reason: %(error)s' %
-            {'operation': scci.POWER_ON,
-             'error': "not well-formed (invalid token): line 10, column 41"},
+            'not well-formed (invalid token): line 10, column 41',
             str(e))
 
     @httpretty.activate
@@ -300,12 +296,11 @@ class SCCITestCase(testtools.TestCase):
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
 
-        e = self.assertRaises(exception.IRMCClientError,
+        e = self.assertRaises(scci.SCCIClientError,
                               client,
                               scci.POWER_ON)
         self.assertEqual(
-            'iRMC SCCI %(operation)s failed. Reason: %(error)s' %
-            {'operation': scci.POWER_ON, 'error': 'http status = 302'},
+            'HTTP PROTOCOL ERROR, STATUS CODE = 302',
             str(e))
 
     @httpretty.activate
@@ -417,7 +412,7 @@ class SCCITestCase(testtools.TestCase):
             content_type="application/x-www-form-urlencoded",
             status=302)
 
-        e = self.assertRaises(exception.IRMCClientError,
+        e = self.assertRaises(scci.SCCIClientError,
                               scci.get_report,
                               self.irmc_address,
                               self.irmc_username,
@@ -426,8 +421,7 @@ class SCCITestCase(testtools.TestCase):
                               auth_method=self.irmc_auth_method,
                               client_timeout=self.irmc_client_timeout)
         self.assertEqual(
-            'iRMC SCCI %(operation)s failed. Reason: %(error)s' %
-            {'operation': 'get_report()', 'error': 'http status = 302'},
+            'HTTP PROTOCOL ERROR, STATUS CODE = 302',
             str(e))
 
     @httpretty.activate

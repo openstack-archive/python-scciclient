@@ -1,3 +1,4 @@
+# Copyright 2015 FUJITSU LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -20,8 +21,35 @@ import xml.etree.ElementTree as ET
 
 import requests
 
-from ironic.common import exception
-from ironic.common.i18n import _
+
+class SCCIError(Exception):
+    """SCCI Error
+
+    This exception is gerenral excetion.
+    """
+    def __init__(self, message, errorcode=None):
+        super(SCCIError, self).__init__(message)
+
+
+class SCCIInvalidInputError(SCCIError):
+    """SCCIInvalidInputError
+
+    This exception is used when invalid inputs are passed to
+    the APIs exposed by this module.
+    """
+    def __init__(self, message):
+        super(SCCIInvalidInputError, self).__init__(message)
+
+
+class SCCIClientError(SCCIError):
+    """SCCIClientError
+
+    This exception is used when a problem is encountered in
+    executing an operation on the iRMC
+    """
+    def __init__(self, message):
+        super(SCCIClientError, self).__init__(message)
+
 
 """
 List of iRMC S4 supported SCCI commands
@@ -183,9 +211,9 @@ def scci_cmd(host, userid, password, cmd,
     :param auth_method: irmc_username
     :param client_timeout: timeout for SCCI operations
     :returns: requests.Response from SCCI server
-    :raises: InvalidParameterValue if port and/or auth_method params
+    :raises: SCCIInvalidInputError if port and/or auth_method params
              are invalid
-    :raises: IRMCClientError if SCCI failed
+    :raises: SCCIClientError if SCCI failed
     """
 
     auth_obj = None
@@ -197,9 +225,9 @@ def scci_cmd(host, userid, password, cmd,
         }[auth_method.lower()]
 
     except KeyError:
-        raise exception.InvalidParameterValue(
-            _("Invalid port %(port)d or "
-              "auth_method for method %(auth_method)s") %
+        raise SCCIInvalidInputError(
+            ("Invalid port %(port)d or " +
+             "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
 
     try:
@@ -211,27 +239,26 @@ def scci_cmd(host, userid, password, cmd,
                           auth=auth_obj)
 
         if r.status_code not in (200, 201):
-            raise exception.IRMCClientError(
-                operation=cmd,
-                error='http status = ' + str(r.status_code))
+            raise SCCIClientError(
+                ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
+                 str(r.status_code)))
 
         result_xml = ET.fromstring(r.text)
         status = result_xml.find("./Value")
         # severity = result_xml.find("./Severity")
         # message = result_xml.find("./Message")
         if not int(status.text) == 0:
-            raise exception.IRMCClientError(operation=cmd,
-                                            error=result_xml.text)
+            raise SCCIClientError(
+                ('SCCI PROTOCOL ERROR, STATUS CODE = %s' %
+                 str(status.text)))
         else:
             return r
 
     except ET.ParseError as parse_error:
-        raise exception.IRMCClientError(operation=cmd,
-                                        error=parse_error)
+        raise SCCIClientError(parse_error)
 
     except requests.exceptions.RequestException as requests_exception:
-        raise exception.IRMCClientError(operation=cmd,
-                                        error=requests_exception)
+        raise SCCIClientError(requests_exception)
 
 
 def get_client(host, userid, password,
@@ -328,9 +355,9 @@ def get_report(host, userid, password,
     :param auth_method: irmc_username
     :param client_timeout: timeout for SCCI operations
     :returns: root element of SCCI report
-    :raises: InvalidParameterValue if port and/or auth_method params
+    :raises: ISCCIInvalidInputError if port and/or auth_method params
              are invalid
-    :raises: IRMCClientError if SCCI failed
+    :raises: SCCIClientError if SCCI failed
     """
 
     auth_obj = None
@@ -342,9 +369,9 @@ def get_report(host, userid, password,
         }[auth_method.lower()]
 
     except KeyError:
-        raise exception.InvalidParameterValue(
-            _("Invalid port %(port)d or "
-              "auth_method for method %(auth_method)s"),
+        raise SCCIInvalidInputError(
+            ("Invalid port %(port)d or " +
+             "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
 
     try:
@@ -355,17 +382,18 @@ def get_report(host, userid, password,
                          auth=auth_obj)
 
         if r.status_code not in (200, 201):
-            raise exception.IRMCClientError(
-                operation='get_report()',
-                error='http status = ' + str(r.status_code))
+            raise SCCIClientError(
+                ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
+                 str(r.status_code)))
 
-        # pprint.pprint(r.text)
         root = ET.fromstring(r.text)
         return root
 
+    except ET.ParseError as parse_error:
+        raise SCCIClientError(parse_error)
+
     except requests.exceptions.RequestException as requests_exception:
-        raise exception.IRMCClientError(operation='get_report()',
-                                        error=requests_exception)
+        raise SCCIClientError(requests_exception)
 
 
 def get_sensor_data_records(report):
