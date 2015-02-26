@@ -145,8 +145,9 @@ class SCCITestCase(testtools.TestCase):
         mock_requests.post.assert_called_with(
             'https://' + self.irmc_address + '/config',
             data=scci.POWER_ON,
+            headers={'Content-type': 'application/x-www-form-urlencoded'},
             verify=False,
-            timeout=(10, self.irmc_client_timeout),
+            timeout=self.irmc_client_timeout,
             allow_redirects=False,
             auth=mock_requests.auth.HTTPBasicAuth(self.irmc_username,
                                                   self.irmc_password))

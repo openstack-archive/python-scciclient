@@ -82,6 +82,7 @@ _POWER_CMD = '''
 </CMDSEQ>
 '''
 
+
 POWER_ON = _POWER_CMD % "PowerOnCabinet"
 POWER_OFF = _POWER_CMD % "PowerOffCabinet"
 POWER_CYCLE = _POWER_CMD % "PowerOffOnCabinet"
@@ -97,10 +98,12 @@ _VIRTUAL_MEDIA_CMD = '''
 </CMDSEQ>
 '''
 
-MOUNT_CD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteCdImage", 0)
-UNMOUNT_CD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteCdImage", 1)
-MOUNT_FD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteFdImage", 0)
-UNMOUNT_FD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteFdImage", 1)
+
+MOUNT_CD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteCdImage", 1)
+UNMOUNT_CD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteCdImage", 0)
+MOUNT_FD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteFdImage", 1)
+UNMOUNT_FD = _VIRTUAL_MEDIA_CMD % ("ConnectRemoteFdImage", 0)
+
 
 _VIRTUAL_MEDIA_CD_SETTINGS = '''
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -113,15 +116,15 @@ _VIRTUAL_MEDIA_CD_SETTINGS = '''
   <!-- "ConfBmcMediaOptionsCdNumber" -->
   <!-- Number of emulated CDROM/DVD Devices -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A68" OI="0" Type="SET">
-    <DATA Type="xsd::integer">1</DATA>
+    <DATA Type="xsd::integer">2</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageServer" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A60" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageUserDomain" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A63" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageShareType" -->
   <!-- 0 = NFS Share / 1 = CIFS Share -->
@@ -130,15 +133,15 @@ _VIRTUAL_MEDIA_CD_SETTINGS = '''
   </CMD>
   <!-- "ConfBmcRemoteCdImageShareName" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A65" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageImageName" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A66" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageUserName" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A61" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageUserPassword" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A62" OI="0" Type="SET">
@@ -146,6 +149,8 @@ _VIRTUAL_MEDIA_CD_SETTINGS = '''
   </CMD>
 </CMDSEQ>
 '''
+
+
 _VIRTUAL_MEDIA_FD_SETTINGS = '''
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CMDSEQ>
@@ -157,32 +162,32 @@ _VIRTUAL_MEDIA_FD_SETTINGS = '''
   <!-- "ConfBmcMediaOptionsFdNumber" -->
   <!-- Number of emulated FD Devices -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A58" OI="0" Type="SET">
-    <DATA Type="xsd::integer">1</DATA>
+    <DATA Type="xsd::integer">2</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageServer" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A50" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageUserDomain" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A53" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageShareType" -->
   <!-- 0 = NFS Share / 1 = CIFS Share -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A54" OI="0" Type="SET">
-    <DATA Type="xsd::integer">"%d"</DATA>
+    <DATA Type="xsd::integer">%d</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageShareName" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A55" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageImageName" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A56" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageUserName" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A51" OI="0" Type="SET">
-    <DATA Type="xsd::string">"%s"</DATA>
+    <DATA Type="xsd::string">%s</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageUserPassword" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A52" OI="0" Type="SET">
@@ -215,7 +220,6 @@ def scci_cmd(host, userid, password, cmd,
              are invalid
     :raises: SCCIClientError if SCCI failed
     """
-
     auth_obj = None
     try:
         protocol = {80: 'http', 443: 'https'}[port]
@@ -231,10 +235,12 @@ def scci_cmd(host, userid, password, cmd,
             {'port': port, 'auth_method': auth_method})
 
     try:
+        header = {'Content-type': 'application/x-www-form-urlencoded'}
         r = requests.post(protocol + '://' + host + '/config',
                           data=cmd,
+                          headers=header,
                           verify=False,
-                          timeout=(10, client_timeout),
+                          timeout=client_timeout,
                           allow_redirects=False,
                           auth=auth_obj)
 
