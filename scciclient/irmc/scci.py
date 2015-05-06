@@ -17,9 +17,11 @@ SCCI functionalities shared between different iRMC modules.
 """
 
 import functools
+import time
 import xml.etree.ElementTree as ET
 
 import requests
+import six
 
 
 class SCCIError(Exception):
@@ -197,14 +199,31 @@ _VIRTUAL_MEDIA_FD_SETTINGS = '''
 '''
 
 
-class SHARETYPE(object):
+class MetaShareType(type):
+    @property
+    def nfs(cls):
+        return cls.NFS
+
+    @property
+    def cifs(cls):
+        return cls.CIFS
+
+
+@six.add_metaclass(MetaShareType)
+class ShareType(object):
     """"Virtual Media Share Type."""
     NFS = 0
     CIFS = 1
 
 
-def scci_cmd(host, userid, password, cmd,
-             port=443, auth_method='basic', client_timeout=60):
+def get_share_type(share_type):
+    """get share type."""
+    return({'nfs': ShareType.nfs,
+            'cifs': ShareType.cifs}[share_type.lower()])
+
+
+def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
+             client_timeout=60, wait=0, **kwargs):
     """execute SCCI command
 
     This function calls SCCI server modules
@@ -215,6 +234,7 @@ def scci_cmd(host, userid, password, cmd,
     :param port: port number of iRMC
     :param auth_method: irmc_username
     :param client_timeout: timeout for SCCI operations
+    :param wait: wait seconds before issuing SCCI command
     :returns: requests.Response from SCCI server
     :raises: SCCIInvalidInputError if port and/or auth_method params
              are invalid
@@ -234,6 +254,8 @@ def scci_cmd(host, userid, password, cmd,
              "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
 
+    # wait
+    time.sleep(wait)
     try:
         header = {'Content-type': 'application/x-www-form-urlencoded'}
         r = requests.post(protocol + '://' + host + '/config',
@@ -267,8 +289,8 @@ def scci_cmd(host, userid, password, cmd,
         raise SCCIClientError(requests_exception)
 
 
-def get_client(host, userid, password,
-               port=443, auth_method='basic', client_timeout=60):
+def get_client(host, userid, password, port=443, auth_method='basic',
+               client_timeout=60, **kwargs):
     """get SCCI command partial function
 
     This function returs SCCI command partial function
@@ -283,7 +305,7 @@ def get_client(host, userid, password,
 
     return functools.partial(scci_cmd, host, userid, password,
                              port=port, auth_method=auth_method,
-                             client_timeout=client_timeout)
+                             client_timeout=client_timeout, **kwargs)
 
 
 def get_virtual_cd_set_params_cmd(remote_image_server,
@@ -298,7 +320,7 @@ def get_virtual_cd_set_params_cmd(remote_image_server,
     This function returs Virtual CD Media Set Parameters Command
     :param remote_image_server: remote image server name or IP
     :param remote_image_user_domain: domain name of remote image server
-    :param remote_image_share_type: share type of SHARETYPE
+    :param remote_image_share_type: share type of ShareType
     :param remote_image_share_name: share name
     :param remote_image_deploy_iso: deploy ISO image file name
     :param remote_image_username: username of remote image server
@@ -330,7 +352,7 @@ def get_virtual_fd_set_params_cmd(remote_image_server,
     This function returs Virtual FD Media Set Parameters Command
     :param remote_image_server: remote image server name or IP
     :param remote_image_user_domain: domain name of remote image server
-    :param remote_image_share_type: share type of SHARETYPE
+    :param remote_image_share_type: share type of ShareType
     :param remote_image_share_name: share name
     :param remote_image_deploy_iso: deploy ISO image file name
     :param remote_image_username: username of remote image server
