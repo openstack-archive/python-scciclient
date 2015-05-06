@@ -75,7 +75,7 @@ class SCCITestCase(testtools.TestCase):
 
         self.irmc_remote_image_server = '10.33.110.49'
         self.irmc_remote_image_user_domain = 'example.local'
-        self.irmc_remote_image_share_type = scci.SHARETYPE.NFS
+        self.irmc_remote_image_share_type = scci.ShareType.nfs
         self.irmc_remote_image_share_name = 'share'
         self.irmc_remote_image_deploy_iso = 'ubuntu-14.04.1-server-amd64.iso'
         self.irmc_remote_image_username = 'deployer'
@@ -121,6 +121,22 @@ class SCCITestCase(testtools.TestCase):
                               requests.get,
                               'https://github.com', verify=False)
         self.assertEqual("'member_descriptor' object is not callable", str(e))
+
+    def test_get_share_type_ok(self):
+        nfs_result = scci.get_share_type("nfs")
+        self.assertEqual(scci.ShareType.nfs, nfs_result)
+        cifs_result = scci.get_share_type("cifs")
+        self.assertEqual(scci.ShareType.cifs, cifs_result)
+
+        NFS_result = scci.get_share_type("NFS")
+        self.assertEqual(scci.ShareType.nfs, NFS_result)
+        CIFS_result = scci.get_share_type("CIFS")
+        self.assertEqual(scci.ShareType.cifs, CIFS_result)
+
+    def test_get_share_type_ng(self):
+        self.assertRaises(KeyError,
+                          scci.get_share_type,
+                          "abc")
 
     @mock.patch('scciclient.irmc.scci.requests')
     def test_scci_cmd_protocol_https_ok(self, mock_requests):
