@@ -3,15 +3,19 @@
 # process, which may cause wedges in the gate later.
 
 hacking>=0.9.2,<0.10
-
 coverage>=3.6
 discover
-python-subunit
+fixtures>=0.3.14
+mock>=1.0
+python-subunit>=0.0.18
 sphinx>=1.1.2
 oslosphinx
 oslotest>=1.1.0.0a1
 testrepository>=0.0.18
 testscenarios>=0.4
-testtools>=0.9.34
-httpretty!=0.8.1,!=0.8.2,!=0.8.3,>=0.8.0
+testtools>=0.9.36,!=1.2.0
+# HTTPretty test hanging on Travis
+# http://stackoverflow.com/questions/29298455/httpretty-test-hanging-on-travis
+# httpretty 0.8.6 seems ok
+httpretty!=0.8.1,!=0.8.2,!=0.8.3,!=0.8.7,!=0.8.8,>=0.8.0
 

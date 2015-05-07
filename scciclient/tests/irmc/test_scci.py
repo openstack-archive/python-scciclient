@@ -18,6 +18,7 @@ Test class for iRMC Power Driver
 import os
 import xml.etree.ElementTree as ET
 
+import fixtures
 import httpretty
 import mock
 import requests
@@ -48,9 +49,8 @@ class SCCITestCase(testtools.TestCase):
         #
         # Therefor 'http_proxy' and/or 'https_proxy should be simply removed
         # without adding anything.
-        for key in os.environ.keys():
-            if key.lower() in ('http_proxy', 'https_proxy'):
-                del os.environ[key]
+        self.useFixture(fixtures.EnvironmentVariable('http_proxy'))
+        self.useFixture(fixtures.EnvironmentVariable('https_proxy'))
 
         with open(os.path.join(
                 os.path.dirname(__file__),
