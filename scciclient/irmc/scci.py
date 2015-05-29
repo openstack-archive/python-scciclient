@@ -24,6 +24,9 @@ import requests
 import six
 
 
+_DEBUG = False
+
+
 class SCCIError(Exception):
     """SCCI Error
 
@@ -89,6 +92,10 @@ POWER_ON = _POWER_CMD % "PowerOnCabinet"
 POWER_OFF = _POWER_CMD % "PowerOffCabinet"
 POWER_CYCLE = _POWER_CMD % "PowerOffOnCabinet"
 POWER_RESET = _POWER_CMD % "ResetServer"
+POWER_RAISE_NMI = _POWER_CMD % "RaiseNMI"
+POWER_SOFT_OFF = _POWER_CMD % "RequestShutdownAndOff"
+POWER_SOFT_CYCLE = _POWER_CMD % "RequestShutdownAndReset"
+POWER_CANCEL_SHUTDOWN = _POWER_CMD % "ShutdownRequestCancelled"
 
 
 _VIRTUAL_MEDIA_CMD = '''
@@ -266,6 +273,8 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
                           allow_redirects=False,
                           auth=auth_obj)
 
+        if _DEBUG:
+            print(r.text)
         if r.status_code not in (200, 201):
             raise SCCIClientError(
                 ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
@@ -274,11 +283,11 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
         result_xml = ET.fromstring(r.text)
         status = result_xml.find("./Value")
         # severity = result_xml.find("./Severity")
-        # message = result_xml.find("./Message")
+        message = result_xml.find("./Message")
         if not int(status.text) == 0:
             raise SCCIClientError(
-                ('SCCI PROTOCOL ERROR, STATUS CODE = %s' %
-                 str(status.text)))
+                ('SCCI PROTOCOL ERROR, STATUS CODE = %s, '
+                 'MESSAGE = %s' % (str(status.text), message.text)))
         else:
             return r
 

@@ -363,6 +363,27 @@ class SCCITestCase(testtools.TestCase):
         self.assertEqual(r.status_code, 200)
 
     @httpretty.activate
+    def test_power_cycle_ok(self):
+        httpretty.register_uri(httpretty.POST,
+                               "http://" + self.irmc_address + "/config",
+                               body="""<?xml version="1.0" encoding="UTF-8"?>
+                               <Status>
+                               <Value>0</Value>
+                               <Severity>Information</Severity>
+                               <Message>No Error</Message>
+                               </Status>""",
+                               status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        r = client(scci.POWER_CYCLE)
+        self.assertEqual(r.status_code, 200)
+
+    @httpretty.activate
     def test_power_reset_ok(self):
         httpretty.register_uri(httpretty.POST,
                                "http://" + self.irmc_address + "/config",
@@ -382,6 +403,180 @@ class SCCITestCase(testtools.TestCase):
                                  client_timeout=self.irmc_client_timeout)
         r = client(scci.POWER_RESET)
         self.assertEqual(r.status_code, 200)
+
+    @httpretty.activate
+    def test_power_raise_nmi_ok(self):
+        httpretty.register_uri(httpretty.POST,
+                               "http://" + self.irmc_address + "/config",
+                               body="""<?xml version="1.0" encoding="UTF-8"?>
+                               <Status>
+                               <Value>0</Value>
+                               <Severity>Information</Severity>
+                               <Message>No Error</Message>
+                               </Status>""",
+                               status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        r = client(scci.POWER_RAISE_NMI)
+        self.assertEqual(r.status_code, 200)
+
+    @httpretty.activate
+    def test_power_soft_off_ok(self):
+        httpretty.register_uri(httpretty.POST,
+                               "http://" + self.irmc_address + "/config",
+                               body="""<?xml version="1.0" encoding="UTF-8"?>
+                               <Status>
+                               <Value>0</Value>
+                               <Severity>Information</Severity>
+                               <Message>No Error</Message>
+                               </Status>""",
+                               status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        r = client(scci.POWER_SOFT_OFF)
+        self.assertEqual(r.status_code, 200)
+
+    @httpretty.activate
+    def test_power_soft_off_ng(self):
+        httpretty.register_uri(
+            httpretty.POST,
+            "http://" + self.irmc_address + "/config",
+            body="""<?xml version="1.0" encoding="UTF-8"?>
+            <Status>
+            <Value>31</Value>
+            <Severity>Error</Severity>
+            <Message>Error 31 (Import of settings in WinSCU"""
+            """ XML format failed) occurred</Message>
+            <Error Context="SCCI" OC="ShutdownRequestCancelled"
+             OE="0" OI="0">ServerView Agent not connected</Error>
+            </Status>""",
+            status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        e = self.assertRaises(scci.SCCIClientError,
+                              client,
+                              scci.POWER_SOFT_OFF)
+        self.assertEqual(
+            'SCCI PROTOCOL ERROR, STATUS CODE = 31, MESSAGE = Error 31'
+            ' (Import of settings in WinSCU XML format failed) occurred',
+            str(e))
+
+    @httpretty.activate
+    def test_power_soft_cycle_ok(self):
+        httpretty.register_uri(httpretty.POST,
+                               "http://" + self.irmc_address + "/config",
+                               body="""<?xml version="1.0" encoding="UTF-8"?>
+                               <Status>
+                               <Value>0</Value>
+                               <Severity>Information</Severity>
+                               <Message>No Error</Message>
+                               </Status>""",
+                               status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        r = client(scci.POWER_SOFT_CYCLE)
+        self.assertEqual(r.status_code, 200)
+
+    @httpretty.activate
+    def test_power_soft_cycle_ng(self):
+        httpretty.register_uri(
+            httpretty.POST,
+            "http://" + self.irmc_address + "/config",
+            body="""<?xml version="1.0" encoding="UTF-8"?>
+            <Status>
+            <Value>31</Value>
+            <Severity>Error</Severity>
+            <Message>Error 31 (Import of settings in WinSCU"""
+            """ XML format failed) occurred</Message>
+            <Error Context="SCCI" OC="ShutdownRequestCancelled"
+             OE="0" OI="0">ServerView Agent not connected</Error>
+            </Status>""",
+            status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        e = self.assertRaises(scci.SCCIClientError,
+                              client,
+                              scci.POWER_SOFT_CYCLE)
+        self.assertEqual(
+            'SCCI PROTOCOL ERROR, STATUS CODE = 31, MESSAGE = Error 31'
+            ' (Import of settings in WinSCU XML format failed) occurred',
+            str(e))
+
+    @httpretty.activate
+    def test_power_cancel_shutdown_ok(self):
+        httpretty.register_uri(httpretty.POST,
+                               "http://" + self.irmc_address + "/config",
+                               body="""<?xml version="1.0" encoding="UTF-8"?>
+                               <Status>
+                               <Value>0</Value>
+                               <Severity>Information</Severity>
+                               <Message>No Error</Message>
+                               </Status>""",
+                               status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        r = client(scci.POWER_CANCEL_SHUTDOWN)
+        self.assertEqual(r.status_code, 200)
+
+    @httpretty.activate
+    def test_power_cancel_shutdown_ng(self):
+        httpretty.register_uri(
+            httpretty.POST,
+            "http://" + self.irmc_address + "/config",
+            body="""<?xml version="1.0" encoding="UTF-8"?>
+            <Status>
+            <Value>31</Value>
+            <Severity>Error</Severity>
+            <Message>Error 31 (Import of settings in WinSCU"""
+            """ XML format failed) occurred</Message>
+            <Error Context="SCCI" OC="ShutdownRequestCancelled"
+             OE="0" OI="0">ServerView Agent not connected</Error>
+            </Status>""",
+            status=200)
+
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout)
+        e = self.assertRaises(scci.SCCIClientError,
+                              client,
+                              scci.POWER_CANCEL_SHUTDOWN)
+        self.assertEqual(
+            'SCCI PROTOCOL ERROR, STATUS CODE = 31, MESSAGE = Error 31'
+            ' (Import of settings in WinSCU XML format failed) occurred',
+            str(e))
 
     def test_get_sensor_data_records_ok(self):
         sensor = scci.get_sensor_data_records(self.report_ok_xml)
