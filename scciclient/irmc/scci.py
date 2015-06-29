@@ -450,7 +450,7 @@ def get_sensor_data_records(report):
 def get_irmc_version(report):
     """get iRMC version
 
-    This function return iRMC version number
+    This function returns iRMC version number
     :param report: SCCI report element
     :returns: version element of SCCI report, or None
     """
@@ -458,3 +458,28 @@ def get_irmc_version(report):
     version = report.find("./System/ManagementControllers/iRMC")
     # ET.dump(version[0])
     return version
+
+
+def get_essential_properties(report, prop_keys):
+    """get essential properties
+
+    This function returns a dictionary which contains keys as in
+    prop_keys and its values from the report.
+
+    :param report: SCCI report element
+    :prop_keys: a list of keys for essential properties
+    :returns: a dictionary which contains keys as in
+              prop_keys and its values.
+    """
+    v = {}
+    v['memory_mb'] = int(report.find('./System/Memory/Installed').text)
+    v['local_gb'] = sum(
+        [int(int(size.text) / 1000)
+         for size in report.findall('.//PhysicalDrive/PhysicalSize')])
+    v['cpus'] = sum([int(cpu.find('./CoreNumber').text)
+                     for cpu in report.find('./System/Processor')])
+    # v['cpus'] = sum([int(cpu.find('./LogicalCpuNumber').text)
+    #                 for cpu in report.find('./System/Processor')])
+    v['cpu_arch'] = 'x86_64'
+
+    return {k: v[k] for k in prop_keys}

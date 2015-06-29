@@ -787,3 +787,16 @@ class SCCITestCase(testtools.TestCase):
                                  client_timeout=self.irmc_client_timeout)
         r = client(scci.MOUNT_FD)
         self.assertEqual(r.status_code, 200)
+
+    def test_get_essential_properties(self):
+        ESSENTIAL_PROPERTIES_KEYS = {
+            'memory_mb', 'local_gb', 'cpus', 'cpu_arch'}
+        expected = {'memory_mb': 8192,
+                    'local_gb': 190,
+                    'cpus': 16,
+                    'cpu_arch': 'x86_64'}
+
+        result = scci.get_essential_properties(
+            self.report_ok_xml, ESSENTIAL_PROPERTIES_KEYS)
+
+        self.assertEqual(expected, result)
