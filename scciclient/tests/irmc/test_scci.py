@@ -16,6 +16,7 @@ Test class for iRMC Power Driver
 """
 
 import os
+import time
 import xml.etree.ElementTree as ET
 
 import fixtures
@@ -636,8 +637,9 @@ class SCCITestCase(testtools.TestCase):
             'HTTP PROTOCOL ERROR, STATUS CODE = 302',
             str(e))
 
+    @mock.patch.object(time, 'sleep')
     @httpretty.activate
-    def test_virtual_media_cd_setting_ok(self):
+    def test_virtual_media_cd_setting_ok(self, sleep_mock):
         httpretty.register_uri(httpretty.POST,
                                "http://" + self.irmc_address + "/config",
                                body="""<?xml version="1.0" encoding="UTF-8"?>
@@ -662,11 +664,14 @@ class SCCITestCase(testtools.TestCase):
                                  port=self.irmc_port,
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
-        r = client(cmd)
-        self.assertEqual(r.status_code, 200)
 
+        r = client(cmd, async=False)
+        self.assertEqual(r.status_code, 200)
+        sleep_mock.assert_called_once_with(5)
+
+    @mock.patch.object(time, 'sleep')
     @httpretty.activate
-    def test_virtual_media_fd_setting_ok(self):
+    def test_virtual_media_fd_setting_ok(self, sleep_mock):
         httpretty.register_uri(httpretty.POST,
                                "http://" + self.irmc_address + "/config",
                                body="""<?xml version="1.0" encoding="UTF-8"?>
@@ -691,11 +696,13 @@ class SCCITestCase(testtools.TestCase):
                                  port=self.irmc_port,
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
-        r = client(cmd)
+        r = client(cmd, async=False)
         self.assertEqual(r.status_code, 200)
+        sleep_mock.assert_called_once_with(5)
 
+    @mock.patch.object(time, 'sleep')
     @httpretty.activate
-    def test_mount_cd_ok(self):
+    def test_mount_cd_ok(self, sleep_mock):
         httpretty.register_uri(httpretty.POST,
                                "http://" + self.irmc_address + "/config",
                                body="""<?xml version="1.0" encoding="UTF-8"?>
@@ -714,9 +721,11 @@ class SCCITestCase(testtools.TestCase):
                                  client_timeout=self.irmc_client_timeout)
         r = client(scci.MOUNT_CD)
         self.assertEqual(r.status_code, 200)
+        self.assertFalse(sleep_mock.called)
 
+    @mock.patch.object(time, 'sleep')
     @httpretty.activate
-    def test_mount_fd_ok(self):
+    def test_mount_fd_ok(self, sleep_mock):
         httpretty.register_uri(httpretty.POST,
                                "http://" + self.irmc_address + "/config",
                                body="""<?xml version="1.0" encoding="UTF-8"?>
@@ -735,6 +744,7 @@ class SCCITestCase(testtools.TestCase):
                                  client_timeout=self.irmc_client_timeout)
         r = client(scci.MOUNT_FD)
         self.assertEqual(r.status_code, 200)
+        self.assertFalse(sleep_mock.called)
 
     @httpretty.activate
     def test_unmount_cd_ok(self):

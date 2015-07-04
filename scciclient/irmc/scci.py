@@ -24,7 +24,7 @@ import requests
 import six
 
 
-_DEBUG = False
+DEBUG = False
 
 
 class SCCIError(Exception):
@@ -230,7 +230,7 @@ def get_share_type(share_type):
 
 
 def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
-             client_timeout=60, wait=0, **kwargs):
+             client_timeout=60, async=True, **kwargs):
     """execute SCCI command
 
     This function calls SCCI server modules
@@ -241,7 +241,7 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
     :param port: port number of iRMC
     :param auth_method: irmc_username
     :param client_timeout: timeout for SCCI operations
-    :param wait: wait seconds before issuing SCCI command
+    :param async: async call if True, sync call otherwise
     :returns: requests.Response from SCCI server
     :raises: SCCIInvalidInputError if port and/or auth_method params
              are invalid
@@ -261,8 +261,6 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
              "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
 
-    # wait
-    time.sleep(wait)
     try:
         header = {'Content-type': 'application/x-www-form-urlencoded'}
         r = requests.post(protocol + '://' + host + '/config',
@@ -272,9 +270,12 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
                           timeout=client_timeout,
                           allow_redirects=False,
                           auth=auth_obj)
-
-        if _DEBUG:
+        if not async:
+            time.sleep(5)
+        if DEBUG:
+            print(cmd)
             print(r.text)
+            print("async = %s" % async)
         if r.status_code not in (200, 201):
             raise SCCIClientError(
                 ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
