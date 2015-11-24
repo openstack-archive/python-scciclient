@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Shiina, Hironori <shiina.hironori@jp.fujitsu.com>
+Code-Review+2: Naohiro Tamura <naohirot.openstack@gmail.com>
+Workflow+1: Naohiro Tamura <naohirot.openstack@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 24 Nov 2015 05:20:43 +0000
+Reviewed-on: https://review.openstack.org/248997
+Project: openstack/python-scciclient
+Branch: refs/heads/master
