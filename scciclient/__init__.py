@@ -16,4 +16,4 @@ import pbr.version
 
 
 __version__ = pbr.version.VersionInfo(
-    'scciclient').version_string()
+    'python-scciclient').version_string()
