@@ -19,10 +19,8 @@ import os
 import time
 import xml.etree.ElementTree as ET
 
-import fixtures
-import httpretty
 import mock
-import requests
+from requests_mock.contrib import fixture as rm_fixture
 import testtools
 
 from scciclient.irmc import scci
@@ -37,21 +35,7 @@ class SCCITestCase(testtools.TestCase):
     def setUp(self):
         super(SCCITestCase, self).setUp()
 
-        # httpretty doesn't work if http proxy environment variables are set.
-        #
-        # Replacing entire environment varialbes like the way of fixing
-        # bug #1403046 causes to fail the following test case
-        #
-        # os.environ = dict((k, v) for (k, v) in os.environ.items()
-        #                  if k.lower() not in ('http_proxy', 'https_proxy'))
-        #
-        # FAIL: ironic.tests.test_utils.ExecuteTestCase.
-        #       test_execute_use_standard_locale_no_env_variables
-        #
-        # Therefor 'http_proxy' and/or 'https_proxy should be simply removed
-        # without adding anything.
-        self.useFixture(fixtures.EnvironmentVariable('http_proxy'))
-        self.useFixture(fixtures.EnvironmentVariable('https_proxy'))
+        self.requests_mock = self.useFixture(rm_fixture.Fixture())
 
         with open(os.path.join(
                 os.path.dirname(__file__),
@@ -68,8 +52,6 @@ class SCCITestCase(testtools.TestCase):
         self.irmc_address = '10.124.196.159'
         self.irmc_username = 'admin'
         self.irmc_password = 'admin0'
-        # The port has to be 80 due to httpretty problem
-        # see the following test case, test_httpretty_https_works_ng
         self.irmc_port = 80
         self.irmc_auth_method = 'basic'
         self.irmc_client_timeout = 60
@@ -81,47 +63,6 @@ class SCCITestCase(testtools.TestCase):
         self.irmc_remote_image_deploy_iso = 'ubuntu-14.04.1-server-amd64.iso'
         self.irmc_remote_image_username = 'deployer'
         self.irmc_remote_image_user_password = 'password'
-
-    def tearDown(self):
-        super(SCCITestCase, self).tearDown()
-
-    @httpretty.activate
-    def test_httpretty_http_works_ok(self):
-        """Test case for mocking http
-
-        This test case is derived from HTTPPretty Github site
-        in order to compare the resutl with the following test case,
-        test_httpretty_https_works_ng().
-        see mocking the status code
-            https://github.com/gabrielfalcao/HTTPretty
-        """
-        httpretty.register_uri(httpretty.GET, "http://github.com",
-                               body="here is the mocked body",
-                               status=201)
-
-        r = requests.get('http://github.com')
-        self.assertEqual(r.status_code, 201)
-
-    @testtools.skip("demonstrating httpretty https mocking problem")
-    @httpretty.activate
-    def test_httpretty_https_works_ng(self):
-        """Test case for showing https mocking problem
-
-        Mocking https caused
-        TypeError: 'member_descriptor' object is not callable
-        as of httpretty (0.8.3).
-        see  HTTPretty breaking other URLs #65
-             https://github.com/gabrielfalcao/HTTPretty/issues/65
-        This test case will fail when the problem is fixed.
-        Therefor it is marked as "skip".
-        """
-        httpretty.register_uri(httpretty.GET, "https://github.com",
-                               body="here is the mocked body",
-                               status=201)
-        e = self.assertRaises(TypeError,
-                              requests.get,
-                              'https://github.com', verify=False)
-        self.assertEqual("'member_descriptor' object is not callable", str(e))
 
     def test_get_share_type_ok(self):
         nfs_result = scci.get_share_type("nfs")
@@ -170,17 +111,14 @@ class SCCITestCase(testtools.TestCase):
                                                   self.irmc_password))
         self.assertEqual('ok', returned_mock_requests_post.return_value)
 
-    @httpretty.activate
     def test_scci_cmd_protocol_http_and_auth_basic_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                        <Status>
+                                            <Value>0</Value>
+                                            <Severity>Information</Severity>
+                                            <Message>No Error</Message>
+                                        </Status>""")
 
         r = scci.scci_cmd(self.irmc_address,
                           self.irmc_username,
@@ -191,17 +129,14 @@ class SCCITestCase(testtools.TestCase):
                           client_timeout=self.irmc_client_timeout)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_scci_cmd_protocol_http_and_auth_digest_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                     <Status>
+                                         <Value>0</Value>
+                                         <Severity>Information</Severity>
+                                         <Message>No Error</Message>
+                                     </Status>""")
 
         auth_digest = 'digest'
         r = scci.scci_cmd(self.irmc_address,
@@ -213,12 +148,10 @@ class SCCITestCase(testtools.TestCase):
                           client_timeout=self.irmc_client_timeout)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_scci_cmd_authentication_failure(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="401 Unauthorized",
-                               status=401)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="401 Unauthorized",
+                                status_code=401)
 
         e = self.assertRaises(scci.SCCIClientError,
                               scci.scci_cmd,
@@ -266,12 +199,10 @@ class SCCITestCase(testtools.TestCase):
                          {'port': self.irmc_port,
                           'auth_method': unknown_auth_method}, str(e))
 
-    @httpretty.activate
     def test_power_on_scci_xml_parse_failed(self):
-        httpretty.register_uri(
-            httpretty.POST,
+        self.requests_mock.post(
             "http://" + self.irmc_address + "/config",
-            body="""<?xml version="1.0" encoding="UTF-8"?>
+            text="""<?xml version="1.0" encoding="UTF-8"?>
             <Status>
             <Value>31</Value>
             <Severity>Error</Severity>
@@ -283,8 +214,7 @@ class SCCITestCase(testtools.TestCase):
             SEQ>  <CMD Context="SCCI" OC=PowerOnCabinet OE="0" OI="0"
             -----------------------------^------------------------------).
             </Error>
-            </Status>""",
-            status=200)
+            </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -300,12 +230,10 @@ class SCCITestCase(testtools.TestCase):
             'not well-formed (invalid token): line 10, column 41',
             str(e))
 
-    @httpretty.activate
     def test_power_on_http_failed(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="anything",
-                               status=302)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="anything",
+                                status_code=302)
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -321,17 +249,14 @@ class SCCITestCase(testtools.TestCase):
             'HTTP PROTOCOL ERROR, STATUS CODE = 302',
             str(e))
 
-    @httpretty.activate
     def test_power_on_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -342,17 +267,14 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_ON)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_off_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -363,17 +285,14 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_OFF)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_cycle_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -384,17 +303,14 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_CYCLE)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_reset_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -405,17 +321,14 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_RESET)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_raise_nmi_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -426,17 +339,14 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_RAISE_NMI)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_soft_off_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -447,12 +357,10 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_SOFT_OFF)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_soft_off_ng(self):
-        httpretty.register_uri(
-            httpretty.POST,
+        self.requests_mock.post(
             "http://" + self.irmc_address + "/config",
-            body="""<?xml version="1.0" encoding="UTF-8"?>
+            text="""<?xml version="1.0" encoding="UTF-8"?>
             <Status>
             <Value>31</Value>
             <Severity>Error</Severity>
@@ -460,8 +368,7 @@ class SCCITestCase(testtools.TestCase):
             """ XML format failed) occurred</Message>
             <Error Context="SCCI" OC="ShutdownRequestCancelled"
              OE="0" OI="0">ServerView Agent not connected</Error>
-            </Status>""",
-            status=200)
+            </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -477,17 +384,14 @@ class SCCITestCase(testtools.TestCase):
             ' (Import of settings in WinSCU XML format failed) occurred',
             str(e))
 
-    @httpretty.activate
     def test_power_soft_cycle_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -498,12 +402,10 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_SOFT_CYCLE)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_soft_cycle_ng(self):
-        httpretty.register_uri(
-            httpretty.POST,
+        self.requests_mock.post(
             "http://" + self.irmc_address + "/config",
-            body="""<?xml version="1.0" encoding="UTF-8"?>
+            text="""<?xml version="1.0" encoding="UTF-8"?>
             <Status>
             <Value>31</Value>
             <Severity>Error</Severity>
@@ -511,8 +413,7 @@ class SCCITestCase(testtools.TestCase):
             """ XML format failed) occurred</Message>
             <Error Context="SCCI" OC="ShutdownRequestCancelled"
              OE="0" OI="0">ServerView Agent not connected</Error>
-            </Status>""",
-            status=200)
+            </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -528,17 +429,14 @@ class SCCITestCase(testtools.TestCase):
             ' (Import of settings in WinSCU XML format failed) occurred',
             str(e))
 
-    @httpretty.activate
     def test_power_cancel_shutdown_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -549,12 +447,10 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.POWER_CANCEL_SHUTDOWN)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_power_cancel_shutdown_ng(self):
-        httpretty.register_uri(
-            httpretty.POST,
+        self.requests_mock.post(
             "http://" + self.irmc_address + "/config",
-            body="""<?xml version="1.0" encoding="UTF-8"?>
+            text="""<?xml version="1.0" encoding="UTF-8"?>
             <Status>
             <Value>31</Value>
             <Severity>Error</Severity>
@@ -562,8 +458,7 @@ class SCCITestCase(testtools.TestCase):
             """ XML format failed) occurred</Message>
             <Error Context="SCCI" OC="ShutdownRequestCancelled"
              OE="0" OI="0">ServerView Agent not connected</Error>
-            </Status>""",
-            status=200)
+            </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -595,14 +490,11 @@ class SCCITestCase(testtools.TestCase):
         version = scci.get_irmc_version(self.report_ng_xml)
         self.assertEqual(version, None)
 
-    @httpretty.activate
     def test_get_report_ok(self):
-        httpretty.register_uri(
-            httpretty.GET,
+        self.requests_mock.get(
             "http://" + self.irmc_address + "/report.xml",
-            body=self.report_ok_txt,
-            content_type="application/x-www-form-urlencoded",
-            status=200)
+            text=self.report_ok_txt,
+            headers={'Content-Type': "application/x-www-form-urlencoded"})
 
         root = scci.get_report(self.irmc_address,
                                self.irmc_username,
@@ -616,14 +508,12 @@ class SCCITestCase(testtools.TestCase):
         sensor = scci.get_sensor_data_records(root)
         self.assertEqual(sensor.tag, 'SensorDataRecords')
 
-    @httpretty.activate
     def test_get_report_http_failed(self):
-        httpretty.register_uri(
-            httpretty.GET,
+        self.requests_mock.get(
             "http://" + self.irmc_address + "/report.xml",
-            body=self.report_ok_txt,
-            content_type="application/x-www-form-urlencoded",
-            status=302)
+            text=self.report_ok_txt,
+            headers={'Content-Type': "application/x-www-form-urlencoded"},
+            status_code=302)
 
         e = self.assertRaises(scci.SCCIClientError,
                               scci.get_report,
@@ -638,17 +528,14 @@ class SCCITestCase(testtools.TestCase):
             str(e))
 
     @mock.patch.object(time, 'sleep')
-    @httpretty.activate
     def test_virtual_media_cd_setting_ok(self, sleep_mock):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         cmd = scci.get_virtual_cd_set_params_cmd(
             self.irmc_remote_image_server,
@@ -670,17 +557,14 @@ class SCCITestCase(testtools.TestCase):
         sleep_mock.assert_called_once_with(5)
 
     @mock.patch.object(time, 'sleep')
-    @httpretty.activate
     def test_virtual_media_fd_setting_ok(self, sleep_mock):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         cmd = scci.get_virtual_fd_set_params_cmd(
             self.irmc_remote_image_server,
@@ -701,17 +585,14 @@ class SCCITestCase(testtools.TestCase):
         sleep_mock.assert_called_once_with(5)
 
     @mock.patch.object(time, 'sleep')
-    @httpretty.activate
     def test_mount_cd_ok(self, sleep_mock):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -724,17 +605,14 @@ class SCCITestCase(testtools.TestCase):
         self.assertFalse(sleep_mock.called)
 
     @mock.patch.object(time, 'sleep')
-    @httpretty.activate
     def test_mount_fd_ok(self, sleep_mock):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -746,17 +624,14 @@ class SCCITestCase(testtools.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFalse(sleep_mock.called)
 
-    @httpretty.activate
     def test_unmount_cd_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                <Value>0</Value>
+                                <Severity>Information</Severity>
+                                <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
@@ -767,17 +642,14 @@ class SCCITestCase(testtools.TestCase):
         r = client(scci.UNMOUNT_CD)
         self.assertEqual(r.status_code, 200)
 
-    @httpretty.activate
     def test_unmount_fd_ok(self):
-        httpretty.register_uri(httpretty.POST,
-                               "http://" + self.irmc_address + "/config",
-                               body="""<?xml version="1.0" encoding="UTF-8"?>
-                               <Status>
-                               <Value>0</Value>
-                               <Severity>Information</Severity>
-                               <Message>No Error</Message>
-                               </Status>""",
-                               status=200)
+        self.requests_mock.post("http://" + self.irmc_address + "/config",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
 
         client = scci.get_client(self.irmc_address,
                                  self.irmc_username,
