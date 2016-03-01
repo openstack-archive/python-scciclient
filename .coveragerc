@@ -4,4 +4,4 @@ source = scciclient
 omit = scciclient/tests/*,scciclient/openstack/*
 
 [report]
-ignore-errors = True
+ignore_errors = True
