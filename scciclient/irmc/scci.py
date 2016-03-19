@@ -125,7 +125,7 @@ _VIRTUAL_MEDIA_CD_SETTINGS = '''
   <!-- "ConfBmcMediaOptionsCdNumber" -->
   <!-- Number of emulated CDROM/DVD Devices -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A68" OI="0" Type="SET">
-    <DATA Type="xsd::integer">2</DATA>
+    <DATA Type="xsd::integer">1</DATA>
   </CMD>
   <!-- "ConfBmcRemoteCdImageServer" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A60" OI="0" Type="SET">
@@ -171,7 +171,7 @@ _VIRTUAL_MEDIA_FD_SETTINGS = '''
   <!-- "ConfBmcMediaOptionsFdNumber" -->
   <!-- Number of emulated FD Devices -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A58" OI="0" Type="SET">
-    <DATA Type="xsd::integer">2</DATA>
+    <DATA Type="xsd::integer">1</DATA>
   </CMD>
   <!-- "ConfBmcRemoteFdImageServer" -->
   <CMD Context="SCCI" OC="ConfigSpace" OE="1A50" OI="0" Type="SET">
