@@ -1,0 +1,9 @@
+Code-Review+2: Shiina, Hironori <shiina.hironori@jp.fujitsu.com>
+Code-Review+2: Yushiro FURUKAWA <y.furukawa_2@jp.fujitsu.com>
+Workflow+1: Yushiro FURUKAWA <y.furukawa_2@jp.fujitsu.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 28 Mar 2016 00:28:33 +0000
+Reviewed-on: https://review.openstack.org/297540
+Project: openstack/python-scciclient
+Branch: refs/heads/master
