@@ -1,0 +1,11 @@
+Code-Review+1: Cody Eilrich <cody.eilrich@ericsson.com>
+Code-Review+1: Clint Adams <clint@gcfm.net>
+Code-Review+1: Sharath Rao <sharath.rao@ericsson.com>
+Code-Review+2: Naohiro Tamura <naohirot.openstack@gmail.com>
+Workflow+1: Naohiro Tamura <naohirot.openstack@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 08 Apr 2016 07:27:31 +0000
+Reviewed-on: https://review.openstack.org/278736
+Project: openstack/python-scciclient
+Branch: refs/heads/master
