@@ -85,6 +85,10 @@
     <Level2CacheSize Unit="KByte">2048</Level2CacheSize>
     <Level3CacheSize Unit="KByte">20480</Level3CacheSize>
    </CPU>
+   <CPU Boot="false">
+    <SocketDesignation>CPU2</SocketDesignation>
+    <Status Description="empty">0</Status>
+   </CPU>
   </Processor>
   <Memory Schema="2">
    <Installed>8192</Installed>

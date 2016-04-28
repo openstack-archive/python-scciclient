@@ -672,3 +672,16 @@ class SCCITestCase(testtools.TestCase):
             self.report_ok_xml, ESSENTIAL_PROPERTIES_KEYS)
 
         self.assertEqual(expected, result)
+
+    def test_get_essential_properties_empty_cpu_socket(self):
+        ESSENTIAL_PROPERTIES_KEYS = {
+            'memory_mb', 'local_gb', 'cpus', 'cpu_arch'}
+        expected = {'memory_mb': 8192,
+                    'local_gb': 190,
+                    'cpus': 16,
+                    'cpu_arch': 'x86_64'}
+
+        result = scci.get_essential_properties(
+            self.report_ng_xml, ESSENTIAL_PROPERTIES_KEYS)
+
+        self.assertEqual(expected, result)

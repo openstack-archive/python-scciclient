@@ -477,7 +477,8 @@ def get_essential_properties(report, prop_keys):
         [int(int(size.text) / 1000)
          for size in report.findall('.//PhysicalDrive/PhysicalSize')])
     v['cpus'] = sum([int(cpu.find('./CoreNumber').text)
-                     for cpu in report.find('./System/Processor')])
+                     for cpu in report.find('./System/Processor')
+                     if cpu.find('./CoreNumber') is not None])
     # v['cpus'] = sum([int(cpu.find('./LogicalCpuNumber').text)
     #                 for cpu in report.find('./System/Processor')])
     v['cpu_arch'] = 'x86_64'
