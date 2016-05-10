@@ -664,7 +664,7 @@ class SCCITestCase(testtools.TestCase):
         ESSENTIAL_PROPERTIES_KEYS = {
             'memory_mb', 'local_gb', 'cpus', 'cpu_arch'}
         expected = {'memory_mb': 8192,
-                    'local_gb': 190,
+                    'local_gb': 185,
                     'cpus': 16,
                     'cpu_arch': 'x86_64'}
 
@@ -677,7 +677,7 @@ class SCCITestCase(testtools.TestCase):
         ESSENTIAL_PROPERTIES_KEYS = {
             'memory_mb', 'local_gb', 'cpus', 'cpu_arch'}
         expected = {'memory_mb': 8192,
-                    'local_gb': 190,
+                    'local_gb': 185,
                     'cpus': 16,
                     'cpu_arch': 'x86_64'}
 

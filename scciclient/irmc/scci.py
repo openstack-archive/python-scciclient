@@ -474,8 +474,8 @@ def get_essential_properties(report, prop_keys):
     v = {}
     v['memory_mb'] = int(report.find('./System/Memory/Installed').text)
     v['local_gb'] = sum(
-        [int(int(size.text) / 1000)
-         for size in report.findall('.//PhysicalDrive/PhysicalSize')])
+        [int(int(size.text) / 1024)
+         for size in report.findall('.//PhysicalDrive/ConfigurableSize')])
     v['cpus'] = sum([int(cpu.find('./CoreNumber').text)
                      for cpu in report.find('./System/Processor')
                      if cpu.find('./CoreNumber') is not None])
