@@ -1,0 +1,9 @@
+Code-Review+1: venkatamahesh <Venkata.Kotha@infinite.com>
+Code-Review+2: Naohiro Tamura <naohirot.openstack@gmail.com>
+Workflow+1: Naohiro Tamura <naohirot.openstack@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 24 Oct 2016 00:46:46 +0000
+Reviewed-on: https://review.openstack.org/389944
+Project: openstack/python-scciclient
+Branch: refs/heads/master
