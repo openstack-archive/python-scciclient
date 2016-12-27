@@ -21,6 +21,8 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
+from scciclient.irmc import ipmi
+from scciclient.irmc import snmp
 import six
 
 
@@ -484,3 +486,48 @@ def get_essential_properties(report, prop_keys):
     v['cpu_arch'] = 'x86_64'
 
     return {k: v[k] for k in prop_keys}
+
+
+def get_capabilities_properties(d_info,
+                                capa_keys,
+                                gpu_ids,
+                                fpga_ids,
+                                temp_dir):
+    """get capabilities properties
+
+    This function returns a dictionary which contains keys
+    and their values from the report.
+
+
+    :param d_info: the list of ipmitool parameters for accessing a node.
+    :param capa_keys: a list of keys for additional capabilities properties
+    :param gpu_ids: the list contains pairs of <vendorID>/<deviceID> for GPU
+    :param fpga_ids: the list contains pairs of <vendorID>/<deviceID> for CPUs
+    with FPGA
+    :param temp_dir: the absolute location of the temporary file.
+    :returns: a dictionary which contains keys and their values.
+    """
+
+    snmp_client = snmp.SNMPClient(d_info['irmc_address'],
+                                  d_info['irmc_snmp_port'],
+                                  d_info['irmc_snmp_version'],
+                                  d_info['irmc_snmp_community'],
+                                  d_info['irmc_snmp_security'])
+    try:
+        c = {}
+        c['trusted_boot'] = ipmi.get_tpm_status(d_info, temp_dir)
+        c['rom_firmware_version'] = snmp.get_bios_firmware_version(snmp_client)
+        c['irmc_firmware_version'] = snmp.get_irmc_firmware_version(
+            snmp_client)
+        c['server_model'] = snmp.get_server_model(snmp_client)
+        c['pci_gpu_devices'], c['cpu_fpgas'] = ipmi.get_gpu_fpgas(d_info,
+                                                                  gpu_ids,
+                                                                  fpga_ids,
+                                                                  temp_dir)
+        return {k: c[k] for k in capa_keys}
+    except snmp.SNMPFailure as err:
+        raise SCCIClientError("SNMP operation '%(operation)s' failed: %(e)s" %
+                              {'operation': "GET", 'e': err})
+    except ipmi.IPMIFailure as err:
+        raise SCCIClientError("IPMI operation '%(operation)s' failed: %(e)s" %
+                              {'operation': "GET", 'e': err})
