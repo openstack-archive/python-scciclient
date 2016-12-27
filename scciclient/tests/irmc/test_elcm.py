@@ -16,6 +16,7 @@
 Test class for iRMC eLCM functionality.
 """
 
+import mock
 from oslo_utils import encodeutils
 import requests
 from requests_mock.contrib import fixture as rm_fixture
@@ -684,3 +685,244 @@ class ELCMTestCase(testtools.TestCase):
                                           session_id=session_id)
 
         self.assertIsNone(result)
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_get')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm.time, 'sleep')
+    def test__process_session_bios_config_get_ok(self, mock_sleep,
+                                                 mock_session_get,
+                                                 mock_session_delete,
+                                                 mock_profile_get,
+                                                 mock_profile_delete):
+        session_id = 123
+        expected_bios_cfg = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'key1': 'val1'
+                    }
+                }
+            }
+        }
+        mock_session_get.side_effect = [
+            {'Session': {'Id': session_id,
+                         'Status': 'activated'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'running'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'terminated regularly'}}]
+        mock_profile_get.return_value = expected_bios_cfg
+
+        result = elcm._process_session_bios_config(irmc_info=self.irmc_info,
+                                                   operation='BACKUP',
+                                                   session_id=session_id)
+        self.assertEqual(expected_bios_cfg, result['bios_config'])
+
+        mock_session_get.assert_has_calls([
+            mock.call(irmc_info=self.irmc_info, session_id=session_id),
+            mock.call(irmc_info=self.irmc_info, session_id=session_id),
+            mock.call(irmc_info=self.irmc_info, session_id=session_id)])
+        mock_profile_get.assert_called_once_with(
+            irmc_info=self.irmc_info,
+            profile_name=elcm.PROFILE_BIOS_CONFIG)
+
+        self.assertEqual(2, mock_sleep.call_count)
+        self.assertEqual(1, mock_session_delete.call_count)
+        self.assertEqual(1, mock_profile_delete.call_count)
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_get')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm.time, 'sleep')
+    def test__process_session_bios_config_set_ok(self, mock_sleep,
+                                                 mock_session_get,
+                                                 mock_session_delete,
+                                                 mock_profile_get,
+                                                 mock_profile_delete):
+        session_id = 123
+        mock_session_get.side_effect = [
+            {'Session': {'Id': session_id,
+                         'Status': 'activated'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'running'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'terminated regularly'}}]
+
+        elcm._process_session_bios_config(irmc_info=self.irmc_info,
+                                          operation='RESTORE',
+                                          session_id=session_id)
+
+        mock_session_get.assert_has_calls([
+            mock.call(irmc_info=self.irmc_info, session_id=session_id),
+            mock.call(irmc_info=self.irmc_info, session_id=session_id),
+            mock.call(irmc_info=self.irmc_info, session_id=session_id)])
+        mock_profile_get.assert_not_called()
+        self.assertEqual(2, mock_sleep.call_count)
+        self.assertEqual(1, mock_session_delete.call_count)
+        self.assertEqual(1, mock_profile_delete.call_count)
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_get')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm.time, 'sleep')
+    def test__process_session_bios_config_timeout(self, mock_sleep,
+                                                  mock_session_get,
+                                                  mock_session_delete,
+                                                  mock_profile_get,
+                                                  mock_profile_delete):
+        session_id = 123
+        mock_session_get.return_value = {'Session': {'Id': session_id,
+                                                     'Status': 'running'}}
+
+        self.assertRaises(elcm.ELCMSessionTimeout,
+                          elcm._process_session_bios_config,
+                          irmc_info=self.irmc_info,
+                          operation='BACKUP',
+                          session_id=session_id,
+                          session_timeout=0.5)
+
+        self.assertEqual(True, mock_sleep.called)
+        self.assertEqual(True, mock_session_get.called)
+        mock_profile_get.assert_not_called()
+        mock_session_delete.assert_not_called()
+        mock_profile_delete.assert_not_called()
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_session_get_log')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    def test__process_session_bios_config_error(self,
+                                                mock_session_get,
+                                                mock_session_get_log,
+                                                mock_session_delete,
+                                                mock_profile_delete):
+        session_id = 123
+        mock_session_get.return_value = {'Session': {'Id': session_id,
+                                                     'Status': 'error'}}
+
+        self.assertRaises(scci.SCCIClientError,
+                          elcm._process_session_bios_config,
+                          irmc_info=self.irmc_info,
+                          operation='RESTORE',
+                          session_id=session_id,
+                          session_timeout=0.5)
+
+        self.assertEqual(True, mock_session_get.called)
+        self.assertEqual(True, mock_session_get_log.called)
+        mock_session_delete.assert_not_called()
+        mock_profile_delete.assert_not_called()
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_create')
+    @mock.patch.object(elcm, 'elcm_profile_get')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm.time, 'sleep')
+    def test_backup_bios_config_ok(self, mock_sleep, mock_session_get,
+                                   mock_session_delete, mock_profile_get,
+                                   mock_profile_create, mock_profile_delete):
+        session_id = 123
+        expected_bios_cfg = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'key1': 'val1'
+                    }
+                }
+            }
+        }
+        mock_session_get.side_effect = [
+            {'Session': {'Id': session_id,
+                         'Status': 'activated'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'running'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'terminated regularly'}}]
+        mock_profile_get.return_value = expected_bios_cfg
+        mock_profile_create.return_value = {'Session': {'Id': session_id,
+                                                        'Status': 'activated'}}
+
+        result = elcm.backup_bios_config(irmc_info=self.irmc_info)
+        self.assertEqual(expected_bios_cfg, result['bios_config'])
+
+        self.assertEqual(2, mock_sleep.call_count)
+        self.assertEqual(True, mock_session_get.called)
+        self.assertEqual(1, mock_session_delete.call_count)
+        self.assertEqual(1, mock_profile_get.call_count)
+        self.assertEqual(1, mock_profile_create.call_count)
+        self.assertEqual(2, mock_profile_delete.call_count)
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm.time, 'sleep')
+    def _test_restore_bios_config_ok(self, mock_sleep, mock_session_get,
+                                     mock_session_delete, mock_profile_set,
+                                     mock_profile_delete, bios_cfg):
+        session_id = 123
+        mock_session_get.side_effect = [
+            {'Session': {'Id': session_id,
+                         'Status': 'activated'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'running'}},
+            {'Session': {'Id': session_id,
+                         'Status': 'terminated regularly'}}]
+        mock_profile_set.return_value = {'Session': {'Id': session_id,
+                                                     'Status': 'activated'}}
+
+        elcm.restore_bios_config(irmc_info=self.irmc_info,
+                                 bios_config=bios_cfg)
+
+        self.assertEqual(2, mock_sleep.call_count)
+        self.assertEqual(True, mock_session_get.called)
+        self.assertEqual(1, mock_session_delete.call_count)
+        self.assertEqual(1, mock_profile_set.call_count)
+        self.assertEqual(2, mock_profile_delete.call_count)
+
+    def test_restore_bios_config_ok_with_dict(self):
+        bios_cfg = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'key1': 'val1'
+                    }
+                }
+            }
+        }
+        self._test_restore_bios_config_ok(bios_cfg=bios_cfg)
+
+    def test_restore_bios_config_ok_with_str(self):
+        bios_cfg = ('{"Server":'
+                    '  {"SystemConfig":'
+                    '    {"BiosConfig":'
+                    '      {'
+                    '        "key1": "val1"'
+                    '      }'
+                    '    }'
+                    '  }'
+                    '}')
+        self._test_restore_bios_config_ok(bios_cfg=bios_cfg)
+
+    def _test_restore_bios_config_invalid_input(self, bios_cfg):
+        self.assertRaises(scci.SCCIInvalidInputError,
+                          elcm.restore_bios_config,
+                          irmc_info=self.irmc_info,
+                          bios_config=bios_cfg)
+
+    def test_restore_bios_config_invalid_input_dict(self):
+        bios_cfg = {
+            'Server': {
+                'SystemConfig': {
+                }
+            }
+        }
+        self._test_restore_bios_config_invalid_input(bios_cfg=bios_cfg)
+
+    def test_restore_bios_config_invalid_input_str(self):
+        bios_cfg = '{"key": "val"}'
+        self._test_restore_bios_config_invalid_input(bios_cfg=bios_cfg)
