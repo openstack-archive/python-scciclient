@@ -21,6 +21,8 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
+from scciclient.irmc import ipmi
+from scciclient.irmc import snmp
 import six
 
 
@@ -378,7 +380,7 @@ def get_virtual_fd_set_params_cmd(remote_image_server,
         remote_image_username,
         remote_image_user_password)
 
-    return cmd
+    return(cmd)
 
 
 def get_report(host, userid, password,
@@ -484,3 +486,49 @@ def get_essential_properties(report, prop_keys):
     v['cpu_arch'] = 'x86_64'
 
     return {k: v[k] for k in prop_keys}
+
+
+def get_capabilities_properties(d_info,
+                                capa_keys,
+                                pci_device_ids,
+                                extra):
+    """get capabilities properties
+
+    This function returns a dictionary which contains keys
+    and their values from the report.
+
+
+    :param d_info: the list of ipmitool parameters for accessing a node.
+    :param capa_keys: a list of keys for additional capabilities properties
+    :param pci_device_ids: the string contains pairs of <vendorID>/<deviceID> for
+    GPU
+    :param extra: the dictionary of additional parameters.
+    :returns: a dictionary which contains keys and their values.
+    """
+
+    snmp_client = snmp.SNMPClient(d_info['irmc_address'],
+                                  d_info['irmc_snmp_port'],
+                                  d_info['irmc_snmp_version'],
+                                  d_info['irmc_snmp_community'],
+                                  d_info['irmc_snmp_security'])
+    try:
+        c = {}
+        c['rom_firmware_version'] = snmp.get_bios_firmware_version(snmp_client)
+        c['irmc_firmware_version'] = snmp.get_irmc_firmware_version(
+            snmp_client)
+        c['server_model'] = snmp.get_server_model(snmp_client)
+        # Sometime the server started but PCI device list building is
+        # still in progress so system will response error. We have to wait
+        # for some more seconds.
+        if extra and extra.get('sleep_flag', False):
+            time.sleep(5)
+        c['pci_gpu_devices'] = ipmi.get_gpu(
+            d_info, pci_device_ids)
+        c['trusted_boot'] = ipmi.get_tpm_status(d_info)
+        return {k: c[k] for k in capa_keys}
+    except snmp.SNMPFailure as err:
+        raise SCCIClientError("SNMP operation '%(operation)s' failed: %(e)s" %
+                              {'operation': "GET", 'e': err})
+    except ipmi.IPMIFailure as err:
+        raise SCCIClientError("IPMI operation '%(operation)s' failed: %(e)s" %
+                              {'operation': "GET", 'e': err})
