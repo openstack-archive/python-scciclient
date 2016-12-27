@@ -16,6 +16,9 @@
 eLCM functionality.
 """
 
+import time
+
+import eventlet
 from oslo_serialization import jsonutils
 import requests
 
@@ -46,6 +49,12 @@ PARAM_PATH_BIOS_CONFIG = 'Server/SystemConfig/BiosConfig'
 PARAM_PATH_IRMC_CONFIG = 'Server/SystemConfig/IrmcConfig'
 
 
+"""
+BIOS config session timeout
+"""
+BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
+
+
 class ELCMInvalidResponse(scci.SCCIError):
     """ELCMInvalidResponse"""
     def __init__(self, message):
@@ -62,6 +71,12 @@ class ELCMSessionNotFound(scci.SCCIError):
     """ELCMSessionNotFound"""
     def __init__(self, message):
         super(ELCMSessionNotFound, self).__init__(message)
+
+
+class ELCMSessionTimeout(scci.SCCIError):
+    """ELCMSessionTimeout"""
+    def __init__(self, message):
+        super(ELCMSessionTimeout, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -462,3 +477,211 @@ def elcm_session_delete(irmc_info, session_id, terminate=False):
                                     '"%(session)s" with error code %(error)s' %
                                     {'session': session_id,
                                      'error': resp.status_code}))
+
+
+def _process_session_bios_config(operation, session_id, irmc_info, callback,
+                                 session_timeout=BIOS_CONFIG_SESSION_TIMEOUT):
+    """process session for Bios config get/set operation
+
+    :param operation: one of 'GET' and 'SET'
+    :param session_id: session id
+    :param irmc_info: node info
+    :param callback: callback function
+    :param session_timeout: session timeout
+    """
+    session_expiration = None
+    if session_timeout:
+        session_expiration = time.time() + session_timeout
+
+    while True:
+        # Get session status to check
+        session = elcm_session_get_status(irmc_info=irmc_info,
+                                          session_id=session_id)
+
+        status = session['Session']['Status']
+        if status == 'running' or status == 'activated':
+            # Sleep a bit
+            eventlet.sleep(5)
+        elif status == 'terminated regularly':
+            # Notify the caller via the callback
+            result = {'success': True}
+
+            if operation == 'GET':
+                # Bios profile is created, get the data now
+                data = elcm_profile_get(irmc_info=irmc_info,
+                                        profile_name=PROFILE_BIOS_CONFIG)
+                result['bios_config'] = data
+            elif operation == 'SET':
+                # Bios config applied successfully
+                pass
+
+            callback(result)
+            break
+        else:
+            # Error occurred, get session log to see what happened
+            session_log = elcm_session_get_log(irmc_info=irmc_info,
+                                               session_id=session_id)
+
+            # Notify the caller via the callback
+            callback({'success': False,
+                      'error': scci.SCCIClientError(
+                          ('Failed to %(operation)s bios config. '
+                           'Session log is "%(session_log)s".' %
+                           {'operation': operation,
+                            'session_log': jsonutils.dumps(session_log)}))})
+            return
+
+        # Check for timeout
+        if session_timeout and time.time() > session_expiration:
+            callback({'success': False,
+                      'error': ELCMSessionTimeout(
+                          ('Failed to %(operation)s bios config. '
+                           'Session %(session_id)s log is timeout.' %
+                           {'operation': operation,
+                            'session_id': session_id}))})
+            return
+
+    # Cleanup operation by deleting related session and profile
+    # NOTE: the session and profile are not deleted if error or timeout
+    try:
+        elcm_session_delete(irmc_info=irmc_info,
+                            session_id=session_id,
+                            terminate=True)
+        elcm_profile_delete(irmc_info=irmc_info,
+                            profile_name=PROFILE_BIOS_CONFIG)
+    except Exception:
+        pass
+
+
+def get_bios_config(irmc_info, callback, async=True):
+    """get current bios configuration asynchronously
+
+    This function sends a BACKUP request to the server. Then when the bios
+    config data are ready for retrieving, it will returns the data to the
+    caller via the provided callback. Note that the callback will be called
+    on a separated thread.
+
+    :param irmc_info: node info
+    :param callback: a function to be called when the bios config data
+      are ready for retrieving. Eg.
+
+      def get_callback(result):
+          if result['success']:
+              LOG.info(result['bios_config'])
+          else:
+              LOG.error(result['error'])
+    :param async: run asynchronously if True
+    """
+
+    def _get_bios_config():
+        try:
+            # 1. Make sure there is no BiosConfig profile in the store
+            try:
+                elcm_profile_delete(irmc_info=irmc_info,
+                                    profile_name=PROFILE_BIOS_CONFIG)
+            except ELCMProfileNotFound:
+                # Ignore this error as it's not an error in this case
+                pass
+
+            # 2. Send request to create a new profile for BiosConfig
+            session = elcm_profile_create(irmc_info=irmc_info,
+                                          param_path=PARAM_PATH_BIOS_CONFIG)
+
+            # 3. Profile creation is in progress, we monitor the session
+            _process_session_bios_config(operation='GET',
+                                         session_id=session['Session']['Id'],
+                                         irmc_info=irmc_info,
+                                         callback=callback)
+        except scci.SCCIClientError as e:
+            callback({'success': False,
+                      'error': e})
+        except Exception as e:
+            callback({'success': False,
+                      'error': scci.SCCIClientError(e)})
+
+    if async:
+        # Spawn a thread to get bios config
+        eventlet.spawn(_get_bios_config)
+    else:
+        _get_bios_config()
+
+
+def set_bios_config(bios_config, irmc_info, callback, async=True):
+    """set bios configuration
+
+    This function sends a RESTORE request to the server. Then when the bios
+    is ready for restoring, it will apply the provided settings and inform
+    the caller via the callback. Note that the callback may be called
+    on a separated thread.
+
+    :param bios_config: bios config
+    :param irmc_info: node info
+    :param callback: a function to be called when the bios config data
+      are restored. Eg.
+
+      def set_callback(result):
+          if result['success']:
+              LOG.info('Bios config is restored successfully')
+          else:
+              LOG.error(result['error'])
+    :param async: run asynchronously if True
+    """
+
+    def _process_bios_config():
+        try:
+            if isinstance(bios_config, dict):
+                input_data = bios_config
+            else:
+                input_data = jsonutils.loads(bios_config)
+
+            # The input data must contain flag "@Processing":"execute" in the
+            # equivalent section.
+            bios_cfg = input_data['Server']['SystemConfig']['BiosConfig']
+            bios_cfg['@Processing'] = 'execute'
+
+            # NOTE: It seems without 2 sub profiles IrmcConfig and
+            # OSInstallation present in the input_data, the process will fail.
+            # The info for this error can be found in the session log.
+            # Work-around: add 2 sub profiles with empty content.
+            input_data['Server']['SystemConfig']['IrmcConfig'] = {}
+            input_data['Server']['SystemConfig']['OSInstallation'] = {}
+
+            return input_data
+        except Exception:
+            raise scci.SCCIInvalidInputError(
+                ('Invalid input bios config "%s".' % bios_config))
+
+    def _set_bios_config():
+        try:
+            # 1. Parse the bios config and create the input data
+            input_data = _process_bios_config()
+
+            # 2. Make sure there is no BiosConfig profile in the store
+            try:
+                elcm_profile_delete(irmc_info=irmc_info,
+                                    profile_name=PROFILE_BIOS_CONFIG)
+            except ELCMProfileNotFound:
+                # Ignore this error as it's not an error in this case
+                pass
+
+            # 3. Send a request to apply the param values
+            session = elcm_profile_set(irmc_info=irmc_info,
+                                       input_data=input_data)
+
+            # 4. Param values applying is in progress, we monitor the session
+            _process_session_bios_config(operation='SET',
+                                         session_id=session['Session']['Id'],
+                                         irmc_info=irmc_info,
+                                         callback=callback)
+        except (scci.SCCIClientError, scci.SCCIInvalidInputError) as e:
+            callback({'success': False,
+                      'error': e})
+        except Exception as e:
+            callback({'success': False,
+                      'error': scci.SCCIClientError(e)})
+
+    if async:
+        # Spawn a thread to set bios config
+        eventlet.spawn(_set_bios_config)
+    else:
+        _set_bios_config()
