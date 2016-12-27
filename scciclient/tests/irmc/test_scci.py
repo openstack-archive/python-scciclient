@@ -23,7 +23,9 @@ import mock
 from requests_mock.contrib import fixture as rm_fixture
 import testtools
 
+from scciclient.irmc import ipmi
 from scciclient.irmc import scci
+from scciclient.irmc import snmp
 
 
 class SCCITestCase(testtools.TestCase):
@@ -55,6 +57,19 @@ class SCCITestCase(testtools.TestCase):
         self.irmc_port = 80
         self.irmc_auth_method = 'basic'
         self.irmc_client_timeout = 60
+        self.irmc_info = {'irmc_address': self.irmc_address,
+                          'irmc_username': self.irmc_username,
+                          'irmc_password': self.irmc_password,
+                          'irmc_snmp_port': 161,
+                          'irmc_snmp_version': 'v2c',
+                          'irmc_snmp_community': 'public',
+                          'irmc_snmp_security': None,
+                          'irmc_client_timeout': self.irmc_client_timeout,
+                          'irmc_sensor_method': 'ipmitool',
+                          'irmc_auth_method': self.irmc_auth_method,
+                          'irmc_port': 443,
+                          'irmc_tempdir': "/tmp"
+                          }
 
         self.irmc_remote_image_server = '10.33.110.49'
         self.irmc_remote_image_user_domain = 'example.local'
@@ -685,3 +700,110 @@ class SCCITestCase(testtools.TestCase):
             self.report_ng_xml, ESSENTIAL_PROPERTIES_KEYS)
 
         self.assertEqual(expected, result)
+
+    @mock.patch.object(ipmi, 'get_gpu')
+    @mock.patch.object(snmp, 'get_server_model')
+    @mock.patch.object(snmp, 'get_irmc_firmware_version')
+    @mock.patch.object(snmp, 'get_bios_firmware_version')
+    @mock.patch.object(ipmi, 'get_tpm_status')
+    def test_get_capabilities_properties(self,
+                                         tpm_mock,
+                                         bios_mock,
+                                         irmc_mock,
+                                         server_mock,
+                                         gpu_mock):
+        CAPABILITIES_PROPERTIES = {'trusted_boot', 'irmc_firmware_version',
+                                   'rom_firmware_version', 'server_model',
+                                   'pci_gpu_devices'}
+        gpu_ids = '0x1000/0x0079,0x2100/0x0080'
+        kwargs = {}
+        kwargs['sleep_flag'] = True
+
+        tpm_mock.return_value = False
+        bios_mock.return_value = 'V4.6.5.4 R1.15.0 for D3099-B1x'
+        irmc_mock.return_value = 'iRMC S4-7.82F'
+        server_mock.return_value = 'TX2540M1F5'
+        gpu_mock.return_value = 1
+
+        expected = {'irmc_firmware_version': 'iRMC S4-7.82F',
+                    'pci_gpu_devices': 1,
+                    'rom_firmware_version': 'V4.6.5.4 R1.15.0 for D3099-B1x',
+                    'server_model': 'TX2540M1F5',
+                    'trusted_boot': False}
+
+        result = scci.get_capabilities_properties(
+            self.irmc_info,
+            CAPABILITIES_PROPERTIES,
+            gpu_ids,
+            **kwargs)
+
+        self.assertEqual(expected, result)
+        tpm_mock.assert_called_once_with(self.irmc_info)
+        bios_mock.assert_called_once_with(mock.ANY)
+        irmc_mock.assert_called_once_with(mock.ANY)
+        server_mock.assert_called_once_with(mock.ANY)
+        gpu_mock.assert_called_once_with(self.irmc_info,
+                                         gpu_ids)
+
+    @mock.patch.object(ipmi, 'get_gpu')
+    @mock.patch.object(snmp, 'get_server_model')
+    @mock.patch.object(snmp, 'get_irmc_firmware_version')
+    @mock.patch.object(snmp, 'get_bios_firmware_version')
+    @mock.patch.object(ipmi, 'get_tpm_status')
+    def test_get_capabilities_properties_blank(self,
+                                               tpm_mock,
+                                               bios_mock,
+                                               irmc_mock,
+                                               server_mock,
+                                               gpu_mock):
+
+        CAPABILITIES_PROPERTIES = {}
+        gpu_ids = '0x1000/0x0079,0x2100/0x0080'
+        kwargs = {}
+        kwargs['sleep_flag'] = True
+
+        tpm_mock.return_value = False
+        bios_mock.return_value = 'V4.6.5.4 R1.15.0 for D3099-B1x'
+        irmc_mock.return_value = 'iRMC S4-7.82F'
+        server_mock.return_value = 'TX2540M1F5'
+        gpu_mock.return_value = 1
+
+        expected = {}
+
+        result = scci.get_capabilities_properties(
+            self.irmc_info,
+            CAPABILITIES_PROPERTIES,
+            gpu_ids,
+            **kwargs)
+
+        self.assertEqual(expected, result)
+        tpm_mock.assert_called_once_with(self.irmc_info)
+        bios_mock.assert_called_once_with(mock.ANY)
+        irmc_mock.assert_called_once_with(mock.ANY)
+        server_mock.assert_called_once_with(mock.ANY)
+        gpu_mock.assert_called_once_with(self.irmc_info,
+                                         gpu_ids)
+
+    @mock.patch.object(ipmi, '_send_raw_command')
+    @mock.patch.object(snmp.SNMPClient, 'get')
+    def test_get_capabilities_properties_scci_client_error(self,
+                                                           snmp_mock,
+                                                           ipmiraw_mock):
+        CAPABILITIES_PROPERTIES = {'trusted_boot', 'irmc_firmware_version',
+                                   'rom_firmware_version', 'server_model',
+                                   'pci_gpu_devices'}
+        gpu_ids = '0x1000/0x0079,0x2100/0x0080'
+        kwargs = {}
+        kwargs['sleep_flag'] = True
+
+        ipmiraw_mock.return_value = None
+        snmp_mock.side_effect = snmp.SNMPFailure("error")
+
+        e = self.assertRaises(scci.SCCIClientError,
+                              scci.get_capabilities_properties,
+                              self.irmc_info,
+                              CAPABILITIES_PROPERTIES,
+                              gpu_ids,
+                              **kwargs)
+        self.assertEqual('SNMP operation \'GET\' failed: SNMP operation \''
+                         'GET BIOS FIRMWARE VERSION\' failed: error', str(e))
