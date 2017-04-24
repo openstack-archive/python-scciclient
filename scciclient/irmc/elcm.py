@@ -578,7 +578,7 @@ def backup_bios_config(irmc_info):
     """backup current bios configuration
 
     This function sends a BACKUP request to the server. Then when the bios
-    config data are ready for retrieving, it will returns the data to the
+    config data are ready for retrieving, it will return the data to the
     caller. Note that this operation may take time.
 
     :param irmc_info: node info

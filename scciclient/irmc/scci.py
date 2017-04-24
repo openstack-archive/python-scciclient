@@ -30,7 +30,7 @@ DEBUG = False
 class SCCIError(Exception):
     """SCCI Error
 
-    This exception is gerenral excetion.
+    This exception is general exception.
     """
     def __init__(self, message, errorcode=None):
         super(SCCIError, self).__init__(message)
@@ -303,7 +303,7 @@ def get_client(host, userid, password, port=443, auth_method='basic',
                client_timeout=60, **kwargs):
     """get SCCI command partial function
 
-    This function returs SCCI command partial function
+    This function returns SCCI command partial function
     :param host: hostname or IP of iRMC
     :param userid: userid for iRMC with administrator privileges
     :param password: password for userid
@@ -327,7 +327,7 @@ def get_virtual_cd_set_params_cmd(remote_image_server,
                                   remote_image_user_password):
     """get Virtual CD Media Set Parameters Command
 
-    This function returs Virtual CD Media Set Parameters Command
+    This function returns Virtual CD Media Set Parameters Command
     :param remote_image_server: remote image server name or IP
     :param remote_image_user_domain: domain name of remote image server
     :param remote_image_share_type: share type of ShareType
@@ -359,7 +359,7 @@ def get_virtual_fd_set_params_cmd(remote_image_server,
                                   remote_image_user_password):
     """get Virtual FD Media Set Parameters Command
 
-    This function returs Virtual FD Media Set Parameters Command
+    This function returns Virtual FD Media Set Parameters Command
     :param remote_image_server: remote image server name or IP
     :param remote_image_user_domain: domain name of remote image server
     :param remote_image_share_type: share type of ShareType
@@ -378,7 +378,7 @@ def get_virtual_fd_set_params_cmd(remote_image_server,
         remote_image_username,
         remote_image_user_password)
 
-    return(cmd)
+    return cmd
 
 
 def get_report(host, userid, password,
