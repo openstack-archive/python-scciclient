@@ -347,7 +347,7 @@ def get_virtual_cd_set_params_cmd(remote_image_server,
         remote_image_username,
         remote_image_user_password)
 
-    return(cmd)
+    return cmd
 
 
 def get_virtual_fd_set_params_cmd(remote_image_server,
@@ -467,7 +467,7 @@ def get_essential_properties(report, prop_keys):
     prop_keys and its values from the report.
 
     :param report: SCCI report element
-    :prop_keys: a list of keys for essential properties
+    :param prop_keys: a list of keys for essential properties
     :returns: a dictionary which contains keys as in
               prop_keys and its values.
     """
