@@ -380,7 +380,8 @@ class SCCITestCase(testtools.TestCase):
                               client,
                               scci.POWER_SOFT_OFF)
         self.assertEqual(
-            'SCCI PROTOCOL ERROR, STATUS CODE = 31, MESSAGE = Error 31'
+            'SCCI PROTOCOL ERROR, STATUS CODE = 31,'
+            ' ERROR = ServerView Agent not connected MESSAGE = Error 31'
             ' (Import of settings in WinSCU XML format failed) occurred',
             str(e))
 
@@ -425,7 +426,8 @@ class SCCITestCase(testtools.TestCase):
                               client,
                               scci.POWER_SOFT_CYCLE)
         self.assertEqual(
-            'SCCI PROTOCOL ERROR, STATUS CODE = 31, MESSAGE = Error 31'
+            'SCCI PROTOCOL ERROR, STATUS CODE = 31,'
+            ' ERROR = ServerView Agent not connected MESSAGE = Error 31'
             ' (Import of settings in WinSCU XML format failed) occurred',
             str(e))
 
@@ -470,7 +472,8 @@ class SCCITestCase(testtools.TestCase):
                               client,
                               scci.POWER_CANCEL_SHUTDOWN)
         self.assertEqual(
-            'SCCI PROTOCOL ERROR, STATUS CODE = 31, MESSAGE = Error 31'
+            'SCCI PROTOCOL ERROR, STATUS CODE = 31,'
+            ' ERROR = ServerView Agent not connected MESSAGE = Error 31'
             ' (Import of settings in WinSCU XML format failed) occurred',
             str(e))
 
