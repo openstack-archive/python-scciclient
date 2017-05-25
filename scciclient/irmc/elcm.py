@@ -622,6 +622,13 @@ def restore_bios_config(irmc_info, bios_config):
     is ready for restoring, it will apply the provided settings and return.
     Note that this operation may take time.
 
+    NOTE: For old firmware versions such as 7.82F, this function will fail if
+    the input dict does not contain the sub-profiles IrmcConfig and
+    OSInstallation. Workaround is to add two sub-profiles with empty value
+    like:
+    input_data['Server']['SystemConfig']['IrmcConfig'] = {}
+    input_data['Server']['SystemConfig']['OSInstallation'] = {}
+
     :param irmc_info: node info
     :param bios_config: bios config
     """
@@ -636,13 +643,6 @@ def restore_bios_config(irmc_info, bios_config):
             # equivalent section.
             bios_cfg = input_data['Server']['SystemConfig']['BiosConfig']
             bios_cfg['@Processing'] = 'execute'
-
-            # NOTE: It seems without 2 sub profiles IrmcConfig and
-            # OSInstallation present in the input_data, the process will fail.
-            # The info for this error can be found in the session log.
-            # Work-around: add 2 sub profiles with empty content.
-            input_data['Server']['SystemConfig']['IrmcConfig'] = {}
-            input_data['Server']['SystemConfig']['OSInstallation'] = {}
 
             return input_data
         except (TypeError, ValueError, KeyError):
