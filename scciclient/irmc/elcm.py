@@ -637,13 +637,6 @@ def restore_bios_config(irmc_info, bios_config):
             bios_cfg = input_data['Server']['SystemConfig']['BiosConfig']
             bios_cfg['@Processing'] = 'execute'
 
-            # NOTE: It seems without 2 sub profiles IrmcConfig and
-            # OSInstallation present in the input_data, the process will fail.
-            # The info for this error can be found in the session log.
-            # Work-around: add 2 sub profiles with empty content.
-            input_data['Server']['SystemConfig']['IrmcConfig'] = {}
-            input_data['Server']['SystemConfig']['OSInstallation'] = {}
-
             return input_data
         except (TypeError, ValueError, KeyError):
             raise scci.SCCIInvalidInputError(
