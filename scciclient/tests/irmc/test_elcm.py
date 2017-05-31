@@ -929,3 +929,99 @@ class ELCMTestCase(testtools.TestCase):
     def test_restore_bios_config_invalid_input_str(self):
         bios_cfg = '{"key": "val"}'
         self._test_restore_bios_config_invalid_input(bios_cfg=bios_cfg)
+
+    @mock.patch.object(elcm, 'backup_bios_config')
+    def test_get_secure_boot_mode_true(self, backup_bios_config_mock):
+        backup_bios_config_mock.return_value = {
+            'bios_config': {
+                'Server': {
+                    'SystemConfig': {
+                        'BiosConfig': {
+                            'SecurityConfig': {
+                                'SecureBootControlEnabled': True
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        result = elcm.get_secure_boot_mode(irmc_info=self.irmc_info)
+        self.assertEqual(True, result)
+        backup_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info)
+
+    @mock.patch.object(elcm, 'backup_bios_config')
+    def test_get_secure_boot_mode_false(self, backup_bios_config_mock):
+        backup_bios_config_mock.return_value = {
+            'bios_config': {
+                'Server': {
+                    'SystemConfig': {
+                        'BiosConfig': {
+                            'SecurityConfig': {
+                                'SecureBootControlEnabled': False
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        result = elcm.get_secure_boot_mode(irmc_info=self.irmc_info)
+        self.assertEqual(False, result)
+        backup_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info)
+
+    @mock.patch.object(elcm, 'backup_bios_config')
+    def test_get_secure_boot_mode_fail(self, backup_bios_config_mock):
+        backup_bios_config_mock.return_value = {
+            'bios_config': {
+                'Server': {
+                    'SystemConfig': {
+                        'BiosConfig': {
+                            'SecurityConfig': {
+                                'FlashWriteEnabled': False
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        self.assertRaises(elcm.SecureBootConfigNotFound,
+                          elcm.get_secure_boot_mode,
+                          irmc_info=self.irmc_info)
+        backup_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info)
+
+    @mock.patch.object(elcm, 'restore_bios_config')
+    def test_set_secure_boot_mode_true(self, restore_bios_config_mock):
+        elcm.set_secure_boot_mode(irmc_info=self.irmc_info, enable=True)
+        bios_config_data = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'SecurityConfig': {
+                            'SecureBootControlEnabled': True
+                        }
+                    }
+                }
+            }
+        }
+        restore_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'restore_bios_config')
+    def test_set_secure_boot_mode_false(self, restore_bios_config_mock):
+        elcm.set_secure_boot_mode(irmc_info=self.irmc_info, enable=False)
+        bios_config_data = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'SecurityConfig': {
+                            'SecureBootControlEnabled': False
+                        }
+                    }
+                }
+            }
+        }
+        restore_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, bios_config=bios_config_data)
