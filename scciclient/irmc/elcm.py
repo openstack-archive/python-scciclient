@@ -52,27 +52,28 @@ BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 
 
 class ELCMInvalidResponse(scci.SCCIError):
-    """ELCMInvalidResponse"""
     def __init__(self, message):
         super(ELCMInvalidResponse, self).__init__(message)
 
 
 class ELCMProfileNotFound(scci.SCCIError):
-    """ELCMProfileNotFound"""
     def __init__(self, message):
         super(ELCMProfileNotFound, self).__init__(message)
 
 
 class ELCMSessionNotFound(scci.SCCIError):
-    """ELCMSessionNotFound"""
     def __init__(self, message):
         super(ELCMSessionNotFound, self).__init__(message)
 
 
 class ELCMSessionTimeout(scci.SCCIError):
-    """ELCMSessionTimeout"""
     def __init__(self, message):
         super(ELCMSessionTimeout, self).__init__(message)
+
+
+class SecureBootConfigNotFound(scci.SCCIError):
+    def __init__(self, message):
+        super(SecureBootConfigNotFound, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -669,3 +670,46 @@ def restore_bios_config(irmc_info, bios_config):
                                  operation='RESTORE',
                                  session_id=session['Session']['Id'],
                                  session_timeout=session_timeout)
+
+
+def get_secure_boot_mode(irmc_info):
+    """Get the status if secure boot is enabled or not.
+
+    :param irmc_info: node info.
+    :raises: SecureBootConfigNotFound, if there is no configuration for secure
+             boot mode in the bios.
+    :return: True if secure boot mode is enabled on the node, False otherwise.
+    """
+
+    result = backup_bios_config(irmc_info=irmc_info)
+
+    try:
+        bioscfg = result['bios_config']['Server']['SystemConfig']['BiosConfig']
+        return bioscfg['SecurityConfig']['SecureBootControlEnabled']
+
+    except KeyError:
+        msg = ("Failed to get secure boot mode from server %s. Upgrading iRMC "
+               "firmware may resolve this issue." % irmc_info['irmc_address'])
+        raise SecureBootConfigNotFound(msg)
+
+
+def set_secure_boot_mode(irmc_info, enable):
+    """Enable/Disable secure boot on the server.
+
+    :param irmc_info: node info
+    :param enable: True, if secure boot needs to be
+                   enabled for next boot, else False.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {
+                    'SecurityConfig': {
+                        'SecureBootControlEnabled': enable
+                    }
+                }
+            }
+        }
+    }
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
