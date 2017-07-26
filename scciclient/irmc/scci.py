@@ -284,11 +284,13 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
         result_xml = ET.fromstring(r.text)
         status = result_xml.find("./Value")
         # severity = result_xml.find("./Severity")
+        error = result_xml.find("./Error")
         message = result_xml.find("./Message")
         if not int(status.text) == 0:
             raise SCCIClientError(
                 ('SCCI PROTOCOL ERROR, STATUS CODE = %s, '
-                 'MESSAGE = %s' % (str(status.text), message.text)))
+                 'ERROR = %s, MESSAGE = %s' %
+                 (str(status.text), error.text, message.text)))
         else:
             return r
 
