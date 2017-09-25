@@ -23,7 +23,7 @@ from requests_mock.contrib import fixture as rm_fixture
 import testtools
 
 from scciclient.irmc import elcm
-from scciclient.irmc import scci
+from scciclient.irmc import exceptions
 
 
 class ELCMTestCase(testtools.TestCase):
@@ -75,14 +75,14 @@ class ELCMTestCase(testtools.TestCase):
 
     def test__parse_elcm_response_body_as_json_empty(self):
         response = self._create_server_response('')
-        self.assertRaises(elcm.ELCMInvalidResponse,
+        self.assertRaises(exceptions.ELCMInvalidResponse,
                           elcm._parse_elcm_response_body_as_json,
                           response=response)
 
     def test__parse_elcm_response_body_as_json_invalid(self):
         content = 'abc123'
         response = self._create_server_response(content)
-        self.assertRaises(elcm.ELCMInvalidResponse,
+        self.assertRaises(exceptions.ELCMInvalidResponse,
                           elcm._parse_elcm_response_body_as_json,
                           response=response)
 
@@ -90,7 +90,7 @@ class ELCMTestCase(testtools.TestCase):
         content = ('key1:val1\nkey2:val2\n'
                    '{"1":1,"2":[123, "abc"],"3":3}')
         response = self._create_server_response(content)
-        self.assertRaises(elcm.ELCMInvalidResponse,
+        self.assertRaises(exceptions.ELCMInvalidResponse,
                           elcm._parse_elcm_response_body_as_json,
                           response=response)
 
@@ -152,7 +152,7 @@ class ELCMTestCase(testtools.TestCase):
         irmc_info = dict(self.irmc_info)
         irmc_info['irmc_port'] = 22
 
-        e = self.assertRaises(scci.SCCIInvalidInputError,
+        e = self.assertRaises(exceptions.SCCIInvalidInputError,
                               elcm.elcm_request,
                               irmc_info,
                               method='GET',
@@ -204,7 +204,7 @@ class ELCMTestCase(testtools.TestCase):
         irmc_info = dict(self.irmc_info)
         irmc_info['irmc_auth_method'] = 'unknown'
 
-        e = self.assertRaises(scci.SCCIInvalidInputError,
+        e = self.assertRaises(exceptions.SCCIInvalidInputError,
                               elcm.elcm_request,
                               irmc_info,
                               method='GET',
@@ -223,7 +223,7 @@ class ELCMTestCase(testtools.TestCase):
             status_code=401,
             text='401 Unauthorized')
 
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               elcm.elcm_request,
                               self.irmc_info,
                               method='GET',
@@ -239,7 +239,7 @@ class ELCMTestCase(testtools.TestCase):
                                      profile_name)),
             status_code=404)
 
-        self.assertRaises(elcm.ELCMProfileNotFound,
+        self.assertRaises(exceptions.ELCMProfileNotFound,
                           elcm.elcm_profile_get,
                           self.irmc_info,
                           profile_name=profile_name)
@@ -250,7 +250,7 @@ class ELCMTestCase(testtools.TestCase):
             self._create_server_url(elcm.URL_PATH_PROFILE_MGMT),
             status_code=503)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_profile_list,
                           self.irmc_info)
 
@@ -287,7 +287,7 @@ class ELCMTestCase(testtools.TestCase):
                                      profile_name)),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_profile_get,
                           self.irmc_info,
                           profile_name=profile_name)
@@ -330,7 +330,7 @@ class ELCMTestCase(testtools.TestCase):
             self._create_server_url(elcm.URL_PATH_PROFILE_MGMT + 'get'),
             status_code=200)  # Success code is 202
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_profile_create,
                           self.irmc_info,
                           param_path=param_path)
@@ -374,7 +374,7 @@ class ELCMTestCase(testtools.TestCase):
             self._create_server_url(elcm.URL_PATH_PROFILE_MGMT + 'set'),
             status_code=200)  # Success code is 202
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_profile_set,
                           self.irmc_info,
                           input_data=input_data)
@@ -419,7 +419,7 @@ class ELCMTestCase(testtools.TestCase):
                                      profile_name)),
             status_code=404)
 
-        self.assertRaises(elcm.ELCMProfileNotFound,
+        self.assertRaises(exceptions.ELCMProfileNotFound,
                           elcm.elcm_profile_delete,
                           self.irmc_info,
                           profile_name=profile_name)
@@ -432,7 +432,7 @@ class ELCMTestCase(testtools.TestCase):
                                      profile_name)),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_profile_delete,
                           self.irmc_info,
                           profile_name=profile_name)
@@ -456,7 +456,7 @@ class ELCMTestCase(testtools.TestCase):
             self._create_server_url('/sessionInformation/'),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_session_list,
                           self.irmc_info)
 
@@ -516,7 +516,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=404)
 
-        self.assertRaises(elcm.ELCMSessionNotFound,
+        self.assertRaises(exceptions.ELCMSessionNotFound,
                           elcm.elcm_session_get_status,
                           self.irmc_info,
                           session_id=session_id)
@@ -529,7 +529,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_session_get_status,
                           self.irmc_info,
                           session_id=session_id)
@@ -566,7 +566,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=404)
 
-        self.assertRaises(elcm.ELCMSessionNotFound,
+        self.assertRaises(exceptions.ELCMSessionNotFound,
                           elcm.elcm_session_get_log,
                           self.irmc_info,
                           session_id=session_id)
@@ -579,7 +579,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_session_get_log,
                           self.irmc_info,
                           session_id=session_id)
@@ -616,7 +616,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=404)
 
-        self.assertRaises(elcm.ELCMSessionNotFound,
+        self.assertRaises(exceptions.ELCMSessionNotFound,
                           elcm.elcm_session_terminate,
                           self.irmc_info,
                           session_id=session_id)
@@ -629,7 +629,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_session_terminate,
                           self.irmc_info,
                           session_id=session_id)
@@ -655,7 +655,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=404)
 
-        self.assertRaises(elcm.ELCMSessionNotFound,
+        self.assertRaises(exceptions.ELCMSessionNotFound,
                           elcm.elcm_session_delete,
                           self.irmc_info,
                           session_id=session_id)
@@ -668,7 +668,7 @@ class ELCMTestCase(testtools.TestCase):
                                      session_id)),
             status_code=500)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm.elcm_session_delete,
                           self.irmc_info,
                           session_id=session_id)
@@ -778,7 +778,7 @@ class ELCMTestCase(testtools.TestCase):
         mock_session_get.return_value = {'Session': {'Id': session_id,
                                                      'Status': 'running'}}
 
-        self.assertRaises(elcm.ELCMSessionTimeout,
+        self.assertRaises(exceptions.ELCMSessionTimeout,
                           elcm._process_session_bios_config,
                           irmc_info=self.irmc_info,
                           operation='BACKUP',
@@ -804,7 +804,7 @@ class ELCMTestCase(testtools.TestCase):
         mock_session_get.return_value = {'Session': {'Id': session_id,
                                                      'Status': 'error'}}
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           elcm._process_session_bios_config,
                           irmc_info=self.irmc_info,
                           operation='RESTORE',
@@ -912,7 +912,7 @@ class ELCMTestCase(testtools.TestCase):
         self._test_restore_bios_config_ok(bios_cfg=bios_cfg)
 
     def _test_restore_bios_config_invalid_input(self, bios_cfg):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           elcm.restore_bios_config,
                           irmc_info=self.irmc_info,
                           bios_config=bios_cfg)
@@ -986,7 +986,7 @@ class ELCMTestCase(testtools.TestCase):
             }
         }
 
-        self.assertRaises(elcm.SecureBootConfigNotFound,
+        self.assertRaises(exceptions.SecureBootConfigNotFound,
                           elcm.get_secure_boot_mode,
                           irmc_info=self.irmc_info)
         backup_bios_config_mock.assert_called_once_with(

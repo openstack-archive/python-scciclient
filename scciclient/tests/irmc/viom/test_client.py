@@ -15,7 +15,7 @@
 import mock
 import testtools
 
-from scciclient.irmc import scci
+from scciclient.irmc import exceptions
 from scciclient.irmc.viom import client as viom_client
 from scciclient.irmc.viom import elcm as viom_elcm
 
@@ -853,26 +853,26 @@ class PhysicalPortIDParseTestCase(testtools.TestCase):
                                0, 9, 2)
 
     def test_unkown_card(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client._parse_physical_port_id, 'HCA1-1')
 
     def test_slot_out_of_range(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client._parse_physical_port_id, 'CNA10-9')
 
     def test_port_out_of_range_min(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client._parse_physical_port_id, 'FC0-0')
 
     def test_port_out_of_range_max(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client._parse_physical_port_id, 'FC9-10')
 
     def test_public_validation(self):
         self.assertIsNone(viom_client.validate_physical_port_id('LAN0-2'))
 
     def test_public_validation_error(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client.validate_physical_port_id, 'CNA1-0')
 
 
@@ -886,9 +886,9 @@ class ConvertNetMaskTestCase(testtools.TestCase):
                          viom_client._convert_netmask(32))
 
     def test_convert_nagative(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client._convert_netmask, -1)
 
     def test_convert_too_large(self):
-        self.assertRaises(scci.SCCIInvalidInputError,
+        self.assertRaises(exceptions.SCCIInvalidInputError,
                           viom_client._convert_netmask, 33)

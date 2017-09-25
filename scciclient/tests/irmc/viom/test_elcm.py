@@ -22,7 +22,7 @@ import mock
 import testtools
 
 from scciclient.irmc import elcm
-from scciclient.irmc import scci
+from scciclient.irmc import exceptions
 from scciclient.irmc.viom import elcm as viom_elcm
 
 
@@ -79,7 +79,7 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
                                       'terminated with error'))
         mock_get_log.return_value = self._session_log_resp(self.session_id)
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           self.client._wait_session,
                           self.session_id)
         mock_get_session.assert_called_once_with(self.irmc_info,
@@ -94,10 +94,10 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
         mock_get_session.return_value = (
             self._session_status_resp(self.session_id,
                                       'terminated with error'))
-        mock_get_log.side_effect = scci.SCCIClientError(
+        mock_get_log.side_effect = exceptions.SCCIClientError(
             'got an error')
 
-        self.assertRaises(scci.SCCIClientError,
+        self.assertRaises(exceptions.SCCIClientError,
                           self.client._wait_session,
                           self.session_id)
         mock_get_session.assert_called_once_with(self.irmc_info,
@@ -117,7 +117,7 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
             self._session_status_resp(self.session_id, 'running'))
         mock_get_log.return_value = self._session_log_resp(self.session_id)
 
-        self.assertRaises(elcm.ELCMSessionTimeout,
+        self.assertRaises(exceptions.ELCMSessionTimeout,
                           self.client._wait_session,
                           self.session_id)
         mock_get_session.assert_called_once_with(self.irmc_info,
@@ -137,7 +137,7 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
             self._session_status_resp(self.session_id, 'running'))
         mock_get_log.return_value = self._session_log_resp(self.session_id)
 
-        self.assertRaises(elcm.ELCMSessionTimeout,
+        self.assertRaises(exceptions.ELCMSessionTimeout,
                           self.client._wait_session,
                           self.session_id,
                           timeout=timeout)
@@ -156,9 +156,9 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
         mock_time.side_effect = [100, 101 + timeout]
         mock_get_session.return_value = (
             self._session_status_resp(self.session_id, 'running'))
-        mock_get_log.side_effect = scci.SCCIClientError('got an error')
+        mock_get_log.side_effect = exceptions.SCCIClientError('got an error')
 
-        self.assertRaises(elcm.ELCMSessionTimeout,
+        self.assertRaises(exceptions.ELCMSessionTimeout,
                           self.client._wait_session,
                           self.session_id)
         mock_get_session.assert_called_once_with(self.irmc_info,
@@ -213,7 +213,7 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
 
     @mock.patch.object(elcm, 'elcm_profile_delete')
     def test_get_profile_without_delete(self, mock_delete):
-        mock_delete.side_effect = elcm.ELCMProfileNotFound('not found')
+        mock_delete.side_effect = exceptions.ELCMProfileNotFound('not found')
         self._test_get_profile()
         mock_delete.assert_called_once_with(self.irmc_info,
                                             'AdapterConfigIrmc')

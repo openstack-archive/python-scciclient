@@ -19,7 +19,7 @@ import time
 import six
 
 from scciclient.irmc import elcm
-from scciclient.irmc import scci
+from scciclient.irmc import exceptions
 
 
 PROFILE_NAME = 'AdapterConfigIrmc'
@@ -49,8 +49,8 @@ class ELCMVIOMClient(object):
                 try:
                     session_log = elcm.elcm_session_get_log(
                         irmc_info=self.irmc_info, session_id=session_id)
-                except scci.SCCIClientError as e:
-                    raise scci.SCCIClientError(
+                except exceptions.SCCIClientError as e:
+                    raise exceptions.SCCIClientError(
                         ('Operation Failed. Session %(session_id)s state is '
                          '%(session_state)s. Session log collection failed: '
                          '%(reason)s' %
@@ -58,7 +58,7 @@ class ELCMVIOMClient(object):
                           'session_state': resp['Session']['Status'],
                           'reason': e}))
 
-                raise scci.SCCIClientError(
+                raise exceptions.SCCIClientError(
                     ('Operation failed. Session %(session_id)s state is '
                      '%(session_state)s. Session log is: "%(session_log)s".' %
                      {'session_id': session_id,
@@ -71,8 +71,8 @@ class ELCMVIOMClient(object):
                 try:
                     session_log = elcm.elcm_session_get_log(
                         irmc_info=self.irmc_info, session_id=session_id)
-                except scci.SCCIClientError as e:
-                    raise elcm.ELCMSessionTimeout(
+                except exceptions.SCCIClientError as e:
+                    raise exceptions.ELCMSessionTimeout(
                         'Operation timed out. Session %(session_id)s has not '
                         'finished in %(timeout)d seconds. Session log '
                         'collection failed: %(reason)s' %
@@ -80,7 +80,7 @@ class ELCMVIOMClient(object):
                          'timeout': timeout,
                          'reason': e})
 
-                raise elcm.ELCMSessionTimeout(
+                raise exceptions.ELCMSessionTimeout(
                     'Operation timed out. Session %(session_id)s has not '
                     'finished in %(timeout)d seconds. Session log is: '
                     '"%(session_log)s.' %
@@ -100,7 +100,7 @@ class ELCMVIOMClient(object):
         # delete old one
         try:
             elcm.elcm_profile_delete(self.irmc_info, PROFILE_NAME)
-        except elcm.ELCMProfileNotFound:
+        except exceptions.ELCMProfileNotFound:
             pass
 
         resp = elcm.elcm_profile_create(self.irmc_info, PARAM_PATH)

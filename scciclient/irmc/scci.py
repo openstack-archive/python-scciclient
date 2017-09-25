@@ -23,37 +23,10 @@ import xml.etree.ElementTree as ET
 import requests
 import six
 
+from scciclient.irmc import exceptions
+
 
 DEBUG = False
-
-
-class SCCIError(Exception):
-    """SCCI Error
-
-    This exception is general exception.
-    """
-    def __init__(self, message, errorcode=None):
-        super(SCCIError, self).__init__(message)
-
-
-class SCCIInvalidInputError(SCCIError):
-    """SCCIInvalidInputError
-
-    This exception is used when invalid inputs are passed to
-    the APIs exposed by this module.
-    """
-    def __init__(self, message):
-        super(SCCIInvalidInputError, self).__init__(message)
-
-
-class SCCIClientError(SCCIError):
-    """SCCIClientError
-
-    This exception is used when a problem is encountered in
-    executing an operation on the iRMC
-    """
-    def __init__(self, message):
-        super(SCCIClientError, self).__init__(message)
 
 
 """
@@ -256,7 +229,7 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
         }[auth_method.lower()]
 
     except KeyError:
-        raise SCCIInvalidInputError(
+        raise exceptions.SCCIInvalidInputError(
             ("Invalid port %(port)d or " +
              "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
@@ -277,7 +250,7 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
             print(r.text)
             print("async = %s" % async)
         if r.status_code not in (200, 201):
-            raise SCCIClientError(
+            raise exceptions.SCCIClientError(
                 ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
                  str(r.status_code)))
 
@@ -287,7 +260,7 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
         error = result_xml.find("./Error")
         message = result_xml.find("./Message")
         if not int(status.text) == 0:
-            raise SCCIClientError(
+            raise exceptions.SCCIClientError(
                 ('SCCI PROTOCOL ERROR, STATUS CODE = %s, '
                  'ERROR = %s, MESSAGE = %s' %
                  (str(status.text), error.text, message.text)))
@@ -295,10 +268,10 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
             return r
 
     except ET.ParseError as parse_error:
-        raise SCCIClientError(parse_error)
+        raise exceptions.SCCIClientError(parse_error)
 
     except requests.exceptions.RequestException as requests_exception:
-        raise SCCIClientError(requests_exception)
+        raise exceptions.SCCIClientError(requests_exception)
 
 
 def get_client(host, userid, password, port=443, auth_method='basic',
@@ -409,7 +382,7 @@ def get_report(host, userid, password,
         }[auth_method.lower()]
 
     except KeyError:
-        raise SCCIInvalidInputError(
+        raise exceptions.SCCIInvalidInputError(
             ("Invalid port %(port)d or " +
              "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
@@ -422,7 +395,7 @@ def get_report(host, userid, password,
                          auth=auth_obj)
 
         if r.status_code not in (200, 201):
-            raise SCCIClientError(
+            raise exceptions.SCCIClientError(
                 ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
                  str(r.status_code)))
 
@@ -430,10 +403,10 @@ def get_report(host, userid, password,
         return root
 
     except ET.ParseError as parse_error:
-        raise SCCIClientError(parse_error)
+        raise exceptions.SCCIClientError(parse_error)
 
     except requests.exceptions.RequestException as requests_exception:
-        raise SCCIClientError(requests_exception)
+        raise exceptions.SCCIClientError(requests_exception)
 
 
 def get_sensor_data_records(report):
