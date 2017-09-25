@@ -18,7 +18,7 @@ import six
 import socket
 import struct
 
-from scciclient.irmc import scci
+from scciclient.irmc import exceptions
 from scciclient.irmc.viom import elcm
 
 
@@ -197,11 +197,11 @@ def _parse_physical_port_id(port_id):
 
     m = re.match('^([a-zA-Z]+)([0-9])-([1-9])$', port_id)
     if not m:
-        raise scci.SCCIInvalidInputError(message)
+        raise exceptions.SCCIInvalidInputError(message)
 
     card_type = m.group(1).upper()
     if card_type not in _POSSIBLE_CARD_TYPE:
-        raise scci.SCCIInvalidInputError(message)
+        raise exceptions.SCCIInvalidInputError(message)
 
     slot_idx = 0
     if int(m.group(2)) == 0:
@@ -249,7 +249,7 @@ def _create_iscsi_boot(initiator_iqn,
 def _convert_netmask(mask):
     """Convert netmask from CIDR format(integer) to doted decimal string."""
     if mask not in range(0, 33):
-        raise scci.SCCIInvalidInputError(
+        raise exceptions.SCCIInvalidInputError(
             'Netmask value is invalid.')
 
     return socket.inet_ntoa(struct.pack(

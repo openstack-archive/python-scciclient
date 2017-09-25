@@ -23,6 +23,7 @@ import mock
 from requests_mock.contrib import fixture as rm_fixture
 import testtools
 
+from scciclient.irmc import exceptions
 from scciclient.irmc import scci
 
 
@@ -153,7 +154,7 @@ class SCCITestCase(testtools.TestCase):
                                 text="401 Unauthorized",
                                 status_code=401)
 
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               scci.scci_cmd,
                               self.irmc_address,
                               self.irmc_username,
@@ -169,7 +170,7 @@ class SCCITestCase(testtools.TestCase):
 
     def test_scci_cmd_protocol_ng(self):
         ssh_port = 22
-        e = self.assertRaises(scci.SCCIInvalidInputError,
+        e = self.assertRaises(exceptions.SCCIInvalidInputError,
                               scci.scci_cmd,
                               self.irmc_address,
                               self.irmc_username,
@@ -185,7 +186,7 @@ class SCCITestCase(testtools.TestCase):
 
     def test_scci_cmd_auth_method_ng(self):
         unknown_auth_method = 'unknown'
-        e = self.assertRaises(scci.SCCIInvalidInputError,
+        e = self.assertRaises(exceptions.SCCIInvalidInputError,
                               scci.scci_cmd,
                               self.irmc_address,
                               self.irmc_username,
@@ -223,7 +224,7 @@ class SCCITestCase(testtools.TestCase):
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
 
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               client,
                               scci.POWER_ON)
         self.assertEqual(
@@ -242,7 +243,7 @@ class SCCITestCase(testtools.TestCase):
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
 
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               client,
                               scci.POWER_ON)
         self.assertEqual(
@@ -376,7 +377,7 @@ class SCCITestCase(testtools.TestCase):
                                  port=self.irmc_port,
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               client,
                               scci.POWER_SOFT_OFF)
         self.assertEqual(
@@ -422,7 +423,7 @@ class SCCITestCase(testtools.TestCase):
                                  port=self.irmc_port,
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               client,
                               scci.POWER_SOFT_CYCLE)
         self.assertEqual(
@@ -468,7 +469,7 @@ class SCCITestCase(testtools.TestCase):
                                  port=self.irmc_port,
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               client,
                               scci.POWER_CANCEL_SHUTDOWN)
         self.assertEqual(
@@ -518,7 +519,7 @@ class SCCITestCase(testtools.TestCase):
             headers={'Content-Type': "application/x-www-form-urlencoded"},
             status_code=302)
 
-        e = self.assertRaises(scci.SCCIClientError,
+        e = self.assertRaises(exceptions.SCCIClientError,
                               scci.get_report,
                               self.irmc_address,
                               self.irmc_username,

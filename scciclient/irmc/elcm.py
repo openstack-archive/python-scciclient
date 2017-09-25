@@ -21,8 +21,7 @@ import time
 from oslo_serialization import jsonutils
 import requests
 
-from scciclient.irmc import scci
-
+from scciclient.irmc import exceptions
 
 """
 List of profile names
@@ -49,31 +48,6 @@ Timeout values
 PROFILE_CREATE_TIMEOUT = 300  # 300 secs
 PROFILE_SET_TIMEOUT = 300  # 300 secs
 BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
-
-
-class ELCMInvalidResponse(scci.SCCIError):
-    def __init__(self, message):
-        super(ELCMInvalidResponse, self).__init__(message)
-
-
-class ELCMProfileNotFound(scci.SCCIError):
-    def __init__(self, message):
-        super(ELCMProfileNotFound, self).__init__(message)
-
-
-class ELCMSessionNotFound(scci.SCCIError):
-    def __init__(self, message):
-        super(ELCMSessionNotFound, self).__init__(message)
-
-
-class ELCMSessionTimeout(scci.SCCIError):
-    def __init__(self, message):
-        super(ELCMSessionTimeout, self).__init__(message)
-
-
-class SecureBootConfigNotFound(scci.SCCIError):
-    def __init__(self, message):
-        super(SecureBootConfigNotFound, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -103,8 +77,8 @@ def _parse_elcm_response_body_as_json(response):
         else:
             return None
     except (TypeError, ValueError):
-        raise ELCMInvalidResponse('eLCM response does not contain valid json '
-                                  'data. Response is "%s".' % body)
+        raise exceptions.ELCMInvalidResponse('eLCM response does not contain valid json '  # noqa
+                                             'data. Response is "%s".' % body)
 
 
 def elcm_request(irmc_info, method, path, **kwargs):
@@ -148,7 +122,7 @@ def elcm_request(irmc_info, method, path, **kwargs):
         }[auth_method.lower()]
 
     except KeyError:
-        raise scci.SCCIInvalidInputError(
+        raise exceptions.SCCIInvalidInputError(
             ("Invalid port %(port)d or " +
              "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
@@ -164,11 +138,11 @@ def elcm_request(irmc_info, method, path, **kwargs):
                              allow_redirects=False,
                              auth=auth_obj)
     except requests.exceptions.RequestException as requests_exception:
-        raise scci.SCCIClientError(requests_exception)
+        raise exceptions.SCCIClientError(requests_exception)
 
     # Process status_code 401
     if r.status_code == 401:
-        raise scci.SCCIClientError('UNAUTHORIZED')
+        raise exceptions.SCCIClientError('UNAUTHORIZED')
 
     return r
 
@@ -199,8 +173,8 @@ def elcm_profile_list(irmc_info):
     if resp.status_code == 200:
         return _parse_elcm_response_body_as_json(resp)
     else:
-        raise scci.SCCIClientError(('Failed to list profiles with '
-                                    'error code %s' % resp.status_code))
+        raise exceptions.SCCIClientError(('Failed to list profiles with '
+                                          'error code %s' % resp.status_code))  # noqa
 
 
 def elcm_profile_get(irmc_info, profile_name):
@@ -220,13 +194,13 @@ def elcm_profile_get(irmc_info, profile_name):
     if resp.status_code == 200:
         return _parse_elcm_response_body_as_json(resp)
     elif resp.status_code == 404:
-        raise ELCMProfileNotFound('Profile "%s" not found '
-                                  'in the profile store.' % profile_name)
+        raise exceptions.ELCMProfileNotFound('Profile "%s" not found '
+                                             'in the profile store.' % profile_name)  # noqa
     else:
-        raise scci.SCCIClientError(('Failed to get profile "%(profile)s" with '
-                                    'error code %(error)s' %
-                                    {'profile': profile_name,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to get profile "%(profile)s" with '  # noqa
+                                          'error code %(error)s' %
+                                          {'profile': profile_name,
+                                           'error': resp.status_code}))
 
 
 def elcm_profile_create(irmc_info, param_path):
@@ -261,11 +235,11 @@ def elcm_profile_create(irmc_info, param_path):
     if resp.status_code == 202:
         return _parse_elcm_response_body_as_json(resp)
     else:
-        raise scci.SCCIClientError(('Failed to create profile for path '
-                                    '"%(param_path)s" with error code '
-                                    '%(error)s' %
-                                    {'param_path': param_path,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to create profile for path '
+                                          '"%(param_path)s" with error code '
+                                          '%(error)s' %
+                                          {'param_path': param_path,
+                                           'error': resp.status_code}))
 
 
 def elcm_profile_set(irmc_info, input_data):
@@ -321,9 +295,9 @@ def elcm_profile_set(irmc_info, input_data):
     if resp.status_code == 202:
         return _parse_elcm_response_body_as_json(resp)
     else:
-        raise scci.SCCIClientError(('Failed to apply param values with '
-                                    'error code %(error)s' %
-                                    {'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to apply param values with '
+                                          'error code %(error)s' %
+                                          {'error': resp.status_code}))
 
 
 def elcm_profile_delete(irmc_info, profile_name):
@@ -344,13 +318,13 @@ def elcm_profile_delete(irmc_info, profile_name):
         return
     elif resp.status_code == 404:
         # Profile not found
-        raise ELCMProfileNotFound('Profile "%s" not found '
-                                  'in the profile store.' % profile_name)
+        raise exceptions.ELCMProfileNotFound('Profile "%s" not found '
+                                             'in the profile store.' % profile_name)  # noqa
     else:
-        raise scci.SCCIClientError(('Failed to delete profile "%(profile)s" '
-                                    'with error code %(error)s' %
-                                    {'profile': profile_name,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to delete profile "%(profile)s" '  # noqa
+                                          'with error code %(error)s' %
+                                          {'profile': profile_name,
+                                           'error': resp.status_code}))
 
 
 def elcm_session_list(irmc_info):
@@ -379,8 +353,8 @@ def elcm_session_list(irmc_info):
     if resp.status_code == 200:
         return _parse_elcm_response_body_as_json(resp)
     else:
-        raise scci.SCCIClientError(('Failed to list sessions with '
-                                    'error code %s' % resp.status_code))
+        raise exceptions.SCCIClientError(('Failed to list sessions with '
+                                          'error code %s' % resp.status_code))  # noqa
 
 
 def elcm_session_get_status(irmc_info, session_id):
@@ -408,12 +382,12 @@ def elcm_session_get_status(irmc_info, session_id):
     if resp.status_code == 200:
         return _parse_elcm_response_body_as_json(resp)
     elif resp.status_code == 404:
-        raise ELCMSessionNotFound('Session "%s" does not exist' % session_id)
+        raise exceptions.ELCMSessionNotFound('Session "%s" does not exist' % session_id)  # noqa
     else:
-        raise scci.SCCIClientError(('Failed to get status of session '
-                                    '"%(session)s" with error code %(error)s' %
-                                    {'session': session_id,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to get status of session '
+                                          '"%(session)s" with error code %(error)s' %  # noqa
+                                          {'session': session_id,
+                                           'error': resp.status_code}))
 
 
 def elcm_session_get_log(irmc_info, session_id):
@@ -440,12 +414,12 @@ def elcm_session_get_log(irmc_info, session_id):
     if resp.status_code == 200:
         return _parse_elcm_response_body_as_json(resp)
     elif resp.status_code == 404:
-        raise ELCMSessionNotFound('Session "%s" does not exist' % session_id)
+        raise exceptions.ELCMSessionNotFound('Session "%s" does not exist' % session_id)  # noqa
     else:
-        raise scci.SCCIClientError(('Failed to get log of session '
-                                    '"%(session)s" with error code %(error)s' %
-                                    {'session': session_id,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to get log of session '
+                                          '"%(session)s" with error code %(error)s' %  # noqa
+                                          {'session': session_id,
+                                           'error': resp.status_code}))
 
 
 def elcm_session_terminate(irmc_info, session_id):
@@ -464,12 +438,12 @@ def elcm_session_terminate(irmc_info, session_id):
     if resp.status_code == 200:
         return
     elif resp.status_code == 404:
-        raise ELCMSessionNotFound('Session "%s" does not exist' % session_id)
+        raise exceptions.ELCMSessionNotFound('Session "%s" does not exist' % session_id)  # noqa
     else:
-        raise scci.SCCIClientError(('Failed to terminate session '
-                                    '"%(session)s" with error code %(error)s' %
-                                    {'session': session_id,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to terminate session '
+                                          '"%(session)s" with error code %(error)s' %  # noqa
+                                          {'session': session_id,
+                                           'error': resp.status_code}))
 
 
 def elcm_session_delete(irmc_info, session_id, terminate=False):
@@ -499,12 +473,12 @@ def elcm_session_delete(irmc_info, session_id, terminate=False):
     if resp.status_code == 200:
         return
     elif resp.status_code == 404:
-        raise ELCMSessionNotFound('Session "%s" does not exist' % session_id)
+        raise exceptions.ELCMSessionNotFound('Session "%s" does not exist' % session_id)  # noqa
     else:
-        raise scci.SCCIClientError(('Failed to remove session '
-                                    '"%(session)s" with error code %(error)s' %
-                                    {'session': session_id,
-                                     'error': resp.status_code}))
+        raise exceptions.SCCIClientError(('Failed to remove session '
+                                          '"%(session)s" with error code %(error)s' %  # noqa
+                                          {'session': session_id,
+                                           'error': resp.status_code}))
 
 
 def _process_session_bios_config(irmc_info, operation, session_id,
@@ -552,7 +526,7 @@ def _process_session_bios_config(irmc_info, operation, session_id,
                                     terminate=True)
                 elcm_profile_delete(irmc_info=irmc_info,
                                     profile_name=PROFILE_BIOS_CONFIG)
-            except scci.SCCIError as e:
+            except exceptions.SCCIError as e:
                 result['warning'] = e
 
             return result
@@ -561,14 +535,14 @@ def _process_session_bios_config(irmc_info, operation, session_id,
             session_log = elcm_session_get_log(irmc_info=irmc_info,
                                                session_id=session_id)
 
-            raise scci.SCCIClientError(
+            raise exceptions.SCCIClientError(
                 ('Failed to %(operation)s bios config. '
                  'Session log is "%(session_log)s".' %
                  {'operation': operation,
                   'session_log': jsonutils.dumps(session_log)}))
 
     else:
-        raise ELCMSessionTimeout(
+        raise exceptions.ELCMSessionTimeout(
             ('Failed to %(operation)s bios config. '
              'Session %(session_id)s log is timeout.' %
              {'operation': operation,
@@ -598,7 +572,7 @@ def backup_bios_config(irmc_info):
         # Profile found, delete it
         elcm_profile_delete(irmc_info=irmc_info,
                             profile_name=PROFILE_BIOS_CONFIG)
-    except ELCMProfileNotFound:
+    except exceptions.ELCMProfileNotFound:
         # Ignore this error as it's not an error in this case
         pass
 
@@ -640,7 +614,7 @@ def restore_bios_config(irmc_info, bios_config):
 
             return input_data
         except (TypeError, ValueError, KeyError):
-            raise scci.SCCIInvalidInputError(
+            raise exceptions.SCCIInvalidInputError(
                 ('Invalid input bios config "%s".' % bios_config))
 
     # 1. Parse the bios config and create the input data
@@ -655,7 +629,7 @@ def restore_bios_config(irmc_info, bios_config):
         # Profile found, delete it
         elcm_profile_delete(irmc_info=irmc_info,
                             profile_name=PROFILE_BIOS_CONFIG)
-    except ELCMProfileNotFound:
+    except exceptions.ELCMProfileNotFound:
         # Ignore this error as it's not an error in this case
         pass
 
@@ -690,7 +664,7 @@ def get_secure_boot_mode(irmc_info):
     except KeyError:
         msg = ("Failed to get secure boot mode from server %s. Upgrading iRMC "
                "firmware may resolve this issue." % irmc_info['irmc_address'])
-        raise SecureBootConfigNotFound(msg)
+        raise exceptions.SecureBootConfigNotFound(msg)
 
 
 def set_secure_boot_mode(irmc_info, enable):
