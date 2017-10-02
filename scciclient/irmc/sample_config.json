@@ -1,0 +1,59 @@
+{
+  "Server": {
+    "HWConfigurationIrmc": {
+      "@Processing": "execute",
+      "Adapters": {
+        "RAIDAdapter": [
+          {
+            "@AdapterId": "0",
+            "@ConfigurationType": "Addressing",
+            "Arrays": {
+              "Array": [
+                {
+                  "@Number": 0,
+                  "@ConfigurationType": "Setting",
+                  "PhysicalDiskRefs": {
+                    "PhysicalDiskRef": [
+                      {
+                        "@Number": "0"
+                      },
+                      {
+                        "@Number": "1"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "LogicalDrives": {
+              "LogicalDrive": [
+                {
+                  "@Number": 0,
+                  "@Action": "Create",
+                  "RaidLevel": "1",
+                  "ArrayRefs": {
+                    "ArrayRef": [
+                      {
+                        "@Number": 0
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "PhysicalDisks": {
+              "PhysicalDisk": [
+                {
+                  "@Number": "0",
+                  "@Action": "None",
+                  "Slot": 0,
+                  "PDStatus": "Operational",
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
