@@ -52,6 +52,23 @@ class ELCMTestCase(testtools.TestCase):
             'irmc_client_timeout': 60,
         }
 
+        self.raid_info = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': None,
+                                'LogicalDrives': None
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+
     def _create_server_url(self, path, port=None):
         scheme = 'unknown'
 
@@ -691,11 +708,11 @@ class ELCMTestCase(testtools.TestCase):
     @mock.patch.object(elcm, 'elcm_session_delete')
     @mock.patch.object(elcm, 'elcm_session_get_status')
     @mock.patch.object(elcm.time, 'sleep')
-    def test__process_session_bios_config_get_ok(self, mock_sleep,
-                                                 mock_session_get,
-                                                 mock_session_delete,
-                                                 mock_profile_get,
-                                                 mock_profile_delete):
+    def test__process_session_data_get_ok(self, mock_sleep,
+                                          mock_session_get,
+                                          mock_session_delete,
+                                          mock_profile_get,
+                                          mock_profile_delete):
         session_id = 123
         expected_bios_cfg = {
             'Server': {
@@ -715,9 +732,9 @@ class ELCMTestCase(testtools.TestCase):
                          'Status': 'terminated regularly'}}]
         mock_profile_get.return_value = expected_bios_cfg
 
-        result = elcm._process_session_bios_config(irmc_info=self.irmc_info,
-                                                   operation='BACKUP',
-                                                   session_id=session_id)
+        result = elcm._process_session_data(irmc_info=self.irmc_info,
+                                            operation='BACKUP_BIOS',
+                                            session_id=session_id)
         self.assertEqual(expected_bios_cfg, result['bios_config'])
 
         mock_session_get.assert_has_calls([
@@ -737,11 +754,11 @@ class ELCMTestCase(testtools.TestCase):
     @mock.patch.object(elcm, 'elcm_session_delete')
     @mock.patch.object(elcm, 'elcm_session_get_status')
     @mock.patch.object(elcm.time, 'sleep')
-    def test__process_session_bios_config_set_ok(self, mock_sleep,
-                                                 mock_session_get,
-                                                 mock_session_delete,
-                                                 mock_profile_get,
-                                                 mock_profile_delete):
+    def test__process_session_data_set_ok(self, mock_sleep,
+                                          mock_session_get,
+                                          mock_session_delete,
+                                          mock_profile_get,
+                                          mock_profile_delete):
         session_id = 123
         mock_session_get.side_effect = [
             {'Session': {'Id': session_id,
@@ -751,9 +768,9 @@ class ELCMTestCase(testtools.TestCase):
             {'Session': {'Id': session_id,
                          'Status': 'terminated regularly'}}]
 
-        elcm._process_session_bios_config(irmc_info=self.irmc_info,
-                                          operation='RESTORE',
-                                          session_id=session_id)
+        elcm._process_session_data(irmc_info=self.irmc_info,
+                                   operation='RESTORE_BIOS',
+                                   session_id=session_id)
 
         mock_session_get.assert_has_calls([
             mock.call(irmc_info=self.irmc_info, session_id=session_id),
@@ -769,19 +786,19 @@ class ELCMTestCase(testtools.TestCase):
     @mock.patch.object(elcm, 'elcm_session_delete')
     @mock.patch.object(elcm, 'elcm_session_get_status')
     @mock.patch.object(elcm.time, 'sleep')
-    def test__process_session_bios_config_timeout(self, mock_sleep,
-                                                  mock_session_get,
-                                                  mock_session_delete,
-                                                  mock_profile_get,
-                                                  mock_profile_delete):
+    def test__process_session_data_timeout(self, mock_sleep,
+                                           mock_session_get,
+                                           mock_session_delete,
+                                           mock_profile_get,
+                                           mock_profile_delete):
         session_id = 123
         mock_session_get.return_value = {'Session': {'Id': session_id,
                                                      'Status': 'running'}}
 
         self.assertRaises(elcm.ELCMSessionTimeout,
-                          elcm._process_session_bios_config,
+                          elcm._process_session_data,
                           irmc_info=self.irmc_info,
-                          operation='BACKUP',
+                          operation='BACKUP_BIOS',
                           session_id=session_id,
                           session_timeout=0.5)
 
@@ -795,19 +812,19 @@ class ELCMTestCase(testtools.TestCase):
     @mock.patch.object(elcm, 'elcm_session_delete')
     @mock.patch.object(elcm, 'elcm_session_get_log')
     @mock.patch.object(elcm, 'elcm_session_get_status')
-    def test__process_session_bios_config_error(self,
-                                                mock_session_get,
-                                                mock_session_get_log,
-                                                mock_session_delete,
-                                                mock_profile_delete):
+    def test__process_session_data_error(self,
+                                         mock_session_get,
+                                         mock_session_get_log,
+                                         mock_session_delete,
+                                         mock_profile_delete):
         session_id = 123
         mock_session_get.return_value = {'Session': {'Id': session_id,
                                                      'Status': 'error'}}
 
         self.assertRaises(scci.SCCIClientError,
-                          elcm._process_session_bios_config,
+                          elcm._process_session_data,
                           irmc_info=self.irmc_info,
-                          operation='RESTORE',
+                          operation='RESTORE_BIOS',
                           session_id=session_id,
                           session_timeout=0.5)
 
@@ -1025,3 +1042,1522 @@ class ELCMTestCase(testtools.TestCase):
         }
         restore_bios_config_mock.assert_called_once_with(
             irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_without_arrays_info_and_physical_disks(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [{'@ConfigurationType': 'Setting',
+                                               '@Number': 0}]},
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1'
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '1',
+                    }
+                ]
+        }
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_with_arrays_info_and_without_physical_disks(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [{'@ConfigurationType': 'Setting',
+                                               '@Number': 0},
+                                              {'@ConfigurationType': 'Setting',
+                                               '@Number': 1}]},
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '0'
+                                        },
+                                        {
+                                            '@Number': 1,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1'
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '0',
+                    },
+                    {
+                        'raid_level': '1',
+                    }
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_with_physical_disks_and_without_array_info(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '0'
+                                                    },
+                                                    {
+                                                        '@Number': '1'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            "logical_disks":
+                [
+                    {
+                        "raid_level": "1",
+                        "physical_disks": [
+                            "0",
+                            "1"
+                        ],
+                    },
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_along_with_physical_disks_and_array_info(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '0'
+                                                    },
+                                                    {
+                                                        '@Number': '1'
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            '@Number': 1,
+                                            '@ConfigurationType': 'Setting',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '4'
+                                                    },
+                                                    {
+                                                        '@Number': '5'
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            '@Number': 1,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 1
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '0',
+                        'physical_disks': [
+                            '0',
+                            '1'
+                        ]
+                    },
+                    {
+                        'raid_level': '1',
+                        'physical_disks': [
+                            '4',
+                            '5'
+                        ]
+                    },
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_with_exist_raid_config(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        # Add logical_drives into exist raid config
+        raid_info_mock.return_value = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': None,
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': None,
+                                            'RaidLevel': '1'
+                                        },
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }, None
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '0'
+                    },
+                ]
+        }
+
+        elcm.create_raid_configuration(self.irmc_info,
+                                       target_raid_config=target_raid_config)
+
+        self.assertEqual(2, elcm_profile_set_mock.call_count)
+        self.assertEqual(2, session_mock.call_count)
+        self.assertEqual(2, raid_info_mock.call_count)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    def test_create_raid_config_without_logical_disk(
+            self, raid_info_mock):
+
+        # Add logical_drives into exist raid config
+        raid_info_mock.return_value = self.raid_info, None
+        target_raid_config = {
+            'logical_disks': []
+        }
+
+        self.assertRaises(elcm.ELCMValueError,
+                          elcm.create_raid_configuration,
+                          irmc_info=self.irmc_info,
+                          target_raid_config=target_raid_config)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_hybrid_in_tartget_raid_config(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting'
+                                        },
+                                        {
+                                            '@Number': 1,
+                                            '@ConfigurationType': 'Setting',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '0'
+                                                    },
+                                                    {
+                                                        '@Number': '1'
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '0'
+                                        },
+                                        {
+                                            '@Number': 1,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 1
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '0',
+                    },
+                    {
+                        'raid_level': '1',
+                        'physical_disks': [
+                            '0',
+                            '1'
+                        ]
+                    },
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_10_in_tartget_raid_config(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting'
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '10'
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '10',
+                    }
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_50_in_tartget_raid_config(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting'
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '50'
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '50',
+                    }
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_60_in_tartget_raid_config(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        raid_info_mock.return_value = self.raid_info, None
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting'
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '60'
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'raid_level': '60',
+                    }
+                ]
+        }
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result, _ = elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        self.assertEqual(result, expected_input)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(self.irmc_info,
+                                                      self.raid_info)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'elcm_profile_get')
+    @mock.patch.object(elcm, '_create_raid_adapter_profile')
+    def test_get_raid_config_with_logical_drives(
+            self, create_raid_adapter_mock, elcm_profile_get_mock):
+
+        profile_name = 'RAIDAdapter'
+        elcm_profile_get_mock.return_value = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    },
+                                                    {
+                                                        '@Number': '5'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'None',
+                                            'RaidLevel': '5',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '0',
+                                            '@Action': 'None',
+                                            'Slot': 0,
+                                            'PDStatus': 'Operational'
+                                        },
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                            'PDStatus': 'Operational'
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                            'PDStatus': 'Available'
+                                        },
+                                        {
+                                            '@Number': '5',
+                                            '@Action': 'None',
+                                            'Slot': 5,
+                                            'PDStatus': 'Available'
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+
+        logical_drive_online_expect = [0]
+
+        result = elcm.get_raid_adapter_profile(irmc_info=self.irmc_info)
+        self.assertEqual(result[1], logical_drive_online_expect)
+        elcm_profile_get_mock.has_called()
+        create_raid_adapter_mock.assert_called_once_with(self.irmc_info)
+        elcm_profile_get_mock.assert_called_once_with(self.irmc_info,
+                                                      profile_name)
+
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    def test_delete_raid_adapter_along_with_logical_drive_slot(
+            self, raid_info_mock, elcm_profile_delete_mock, session_mock,
+            elcm_profile_set_mock):
+
+        raid_info_mock.return_value = [{
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'None',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '0',
+                                            '@Action': 'None',
+                                            'Slot': 0,
+                                        },
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        },
+                                        {
+                                            '@Number': '5',
+                                            '@Action': 'None',
+                                            'Slot': 5,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }, [0, 1]]
+
+        input_data_expect = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Delete',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '0',
+                                            '@Action': 'None',
+                                            'Slot': 0,
+                                        },
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        },
+                                        {
+                                            '@Number': '5',
+                                            '@Action': 'None',
+                                            'Slot': 5,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        profile_name = 'RAIDAdapter'
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        logical_drive_slot = 0
+        result = elcm.delete_raid_configuration(
+            irmc_info=self.irmc_info, logical_drive_slot=logical_drive_slot)
+
+        self.assertEqual(result, input_data_expect)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(
+            self.irmc_info, raid_info_mock.return_value[0])
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+        elcm_profile_delete_mock.assert_called_once_with(self.irmc_info,
+                                                         profile_name)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    def test_delete_raid_adapter_along_with_fail_logical_drive_slot(
+            self, raid_info_mock):
+        raid_info_mock.return_value = [{
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'None',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '0',
+                                            '@Action': 'None',
+                                            'Slot': 0,
+                                        },
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        },
+                                        {
+                                            '@Number': '5',
+                                            '@Action': 'None',
+                                            'Slot': 5,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }, [0]]
+        logical_drive_slot = 1
+
+        self.assertRaises(elcm.ELCMValueError,
+                          elcm.delete_raid_configuration,
+                          irmc_info=self.irmc_info,
+                          logical_drive_slot=logical_drive_slot)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    def test_delete_raid_adapter_along_with_fail_logical_drive_slot_1(
+            self, raid_info_mock):
+        raid_info_mock.return_value = [{
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'None',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '0',
+                                            '@Action': 'None',
+                                            'Slot': 0,
+                                        },
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        },
+                                        {
+                                            '@Number': '5',
+                                            '@Action': 'None',
+                                            'Slot': 5,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }, [0]]
+        logical_drive_slot = "0"
+        self.assertRaises(elcm.ELCMValueError,
+                          elcm.delete_raid_configuration,
+                          irmc_info=self.irmc_info,
+                          logical_drive_slot=logical_drive_slot)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    def test_delete_raid_adapter_along_with_fail_logical_drive_slot_2(
+            self, raid_info_mock):
+        raid_info_mock.return_value = [{
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'None',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '0',
+                                            '@Action': 'None',
+                                            'Slot': 0,
+                                        },
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        },
+                                        {
+                                            '@Number': '5',
+                                            '@Action': 'None',
+                                            'Slot': 5,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }, [0]]
+        logical_drive_slot = [0, 1]
+        self.assertRaises(elcm.ELCMValueError,
+                          elcm.delete_raid_configuration,
+                          irmc_info=self.irmc_info,
+                          logical_drive_slot=logical_drive_slot)
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'get_raid_adapter_profile')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_delete_raid_adapter_with_logical_drive_slot_is_none(
+        self, session_mock, elcm_profile_delete_mock, elcm_profile_set_mock,
+            raid_info_mock):
+        raid_info_mock.return_value = [{
+            'Server': {
+                'HWConfigurationIrmc': {
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'None',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }, [0, 1]]
+
+        input_data_expect = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                '@AdapterId': 'RAIDAdapter0',
+                                '@ConfigurationType': 'Addressing',
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Addressing',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '1'
+                                                    },
+                                                    {
+                                                        '@Number': '4'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Delete',
+                                            'RaidLevel': '0',
+                                            'ArrayRefs': {
+                                                'ArrayRef': [
+                                                    {
+                                                        '@Number': 0
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'PhysicalDisks': {
+                                    'PhysicalDisk': [
+                                        {
+                                            '@Number': '1',
+                                            '@Action': 'None',
+                                            'Slot': 1,
+                                        },
+                                        {
+                                            '@Number': '4',
+                                            '@Action': 'None',
+                                            'Slot': 4,
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        profile_name = 'RAIDAdapter'
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        result = elcm.delete_raid_configuration(irmc_info=self.irmc_info)
+        self.assertEqual(result, input_data_expect)
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        elcm_profile_set_mock.assert_called_once_with(
+            self.irmc_info, raid_info_mock.return_value[0])
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+        elcm_profile_delete_mock.assert_called_once_with(self.irmc_info,
+                                                         profile_name)
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_create')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm, 'elcm_session_delete')
+    @mock.patch.object(elcm, 'elcm_profile_get')
+    def test_success_session_monitoring(self, elcm_profile_get_mock,
+                                        elcm_session_delete_mock,
+                                        elcm_session_mock,
+                                        elcm_profile_create_mock,
+                                        elcm_profile_delete_mock):
+        profile_name = 'RAIDAdapter'
+        param_path = 'Server/HWConfigurationIrmc/Adapters/RAIDAdapter'
+        session_id = 1
+
+        elcm_profile_create_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+
+        elcm_session_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "Tag": "",
+                "WorkSequence": "obtainProfileParameters",
+                "Start": "2018\/03\/19 12:28:03",
+                "Duration": 249,
+                "Status": "terminated regularly"
+            }
+        }
+        elcm._create_raid_adapter_profile(irmc_info=self.irmc_info)
+
+        elcm_profile_get_mock.assert_called_once_with(self.irmc_info,
+                                                      profile_name)
+        elcm_session_delete_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, session_id=session_id, terminate=True)
+        elcm_session_mock.assert_called_once_with(irmc_info=self.irmc_info,
+                                                  session_id=session_id)
+        elcm_profile_create_mock.assert_called_once_with(self.irmc_info,
+                                                         param_path)
+        elcm_profile_delete_mock.assert_called_once_with(self.irmc_info,
+                                                         profile_name)
+
+    @mock.patch.object(elcm, 'elcm_profile_delete')
+    @mock.patch.object(elcm, 'elcm_profile_create')
+    @mock.patch.object(elcm, 'elcm_session_get_status')
+    @mock.patch.object(elcm, 'elcm_session_get_log')
+    def test_fail_session_monitoring(self, elcm_session_get_log_mock,
+                                     elcm_session_mock,
+                                     elcm_profile_create_mock,
+                                     elcm_profile_delete_mock):
+        profile_name = 'RAIDAdapter'
+        param_path = 'Server/HWConfigurationIrmc/Adapters/RAIDAdapter'
+
+        session_id = 1
+
+        elcm_profile_create_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+
+        elcm_session_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "Tag": "",
+                "WorkSequence": "obtainProfileParameters",
+                "Start": "",
+                "Duration": 0,
+                "Status": "terminated - conflict with another running eLCM "
+                          "activity"
+            }
+        }
+
+        elcm_session_get_log_mock.return_value = {
+            'SessionLog': {
+                'Id': 1,
+                'Tag': '',
+                'WorkSequence': 'obtainProfileParameters',
+                'Entries': {
+                    'Entry': [
+                        {
+                            '@date': '2018\/03\/12 15:10:00',
+                            '#text': 'createRaidDatabase: '
+                                     'RAID Controller check start'
+                        },
+                        {
+                            '@date': '2018\/03\/19 09:40:03',
+                            '#text': 'LCMScheduler: Executing of '
+                                     'obtainProfileParameters prohibited as '
+                                     'obtainProfileParameters currently '
+                                     'running'
+                        }
+                    ]
+                }
+            }
+        }
+
+        self.assertRaises(scci.SCCIClientError,
+                          elcm._create_raid_adapter_profile, self.irmc_info)
+
+        elcm_session_get_log_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, session_id=session_id)
+        elcm_session_mock.assert_called_once_with(irmc_info=self.irmc_info,
+                                                  session_id=session_id)
+        elcm_profile_create_mock.assert_called_once_with(self.irmc_info,
+                                                         param_path)
+        elcm_profile_delete_mock.assert_called_once_with(self.irmc_info,
+                                                         profile_name)
