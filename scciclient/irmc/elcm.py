@@ -28,13 +28,12 @@ from scciclient.irmc import scci
 List of profile names
 """
 PROFILE_BIOS_CONFIG = 'BiosConfig'
-
+PROFILE_RAID_CONFIG = 'RAIDAdapter'
 
 """
 List of URL paths for profiles
 """
 URL_PATH_PROFILE_MGMT = '/rest/v1/Oem/eLCM/ProfileManagement/'
-
 
 """
 List of request params for profiles
@@ -42,6 +41,8 @@ List of request params for profiles
 PARAM_PATH_SYSTEM_CONFIG = 'Server/SystemConfig/'
 PARAM_PATH_BIOS_CONFIG = PARAM_PATH_SYSTEM_CONFIG + PROFILE_BIOS_CONFIG
 
+PARAM_PATH_HW_CONFIG = 'Server/HWConfigurationIrmc/Adapters/'
+PARAM_PATH_RAID_CONFIG = PARAM_PATH_HW_CONFIG + PROFILE_RAID_CONFIG
 
 """
 Timeout values
@@ -49,6 +50,7 @@ Timeout values
 PROFILE_CREATE_TIMEOUT = 300  # 300 secs
 PROFILE_SET_TIMEOUT = 300  # 300 secs
 BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
+RAID_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 
 
 class ELCMInvalidResponse(scci.SCCIError):
@@ -74,6 +76,11 @@ class ELCMSessionTimeout(scci.SCCIError):
 class SecureBootConfigNotFound(scci.SCCIError):
     def __init__(self, message):
         super(SecureBootConfigNotFound, self).__init__(message)
+
+
+class ELCMValueError(scci.SCCIError):
+    def __init__(self, message):
+        super(ELCMValueError, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -311,11 +318,13 @@ def elcm_profile_set(irmc_info, input_data):
     _irmc_info = dict(irmc_info)
     _irmc_info['irmc_client_timeout'] = PROFILE_SET_TIMEOUT
 
+    content_type = 'application/x-www-form-urlencoded'
+    if input_data['Server'].get('HWConfigurationIrmc'):
+        content_type = 'application/json'
     resp = elcm_request(_irmc_info,
                         method='POST',
                         path=URL_PATH_PROFILE_MGMT + 'set',
-                        headers={'Content-type':
-                                 'application/x-www-form-urlencoded'},
+                        headers={'Content-type': content_type},
                         data=data)
 
     if resp.status_code == 202:
@@ -507,17 +516,22 @@ def elcm_session_delete(irmc_info, session_id, terminate=False):
                                      'error': resp.status_code}))
 
 
-def _process_session_bios_config(irmc_info, operation, session_id,
-                                 session_timeout=BIOS_CONFIG_SESSION_TIMEOUT):
-    """process session for Bios config backup/restore operation
+def _process_session_data(irmc_info, operation, session_id,
+                          session_timeout=BIOS_CONFIG_SESSION_TIMEOUT):
+    """process session for Bios config backup/restore or RAID config operation
 
     :param irmc_info: node info
-    :param operation: one of 'BACKUP' and 'RESTORE'
+    :param operation: one of 'BACKUP_BIOS', 'RESTORE_BIOS' or 'CONFIG_RAID'
     :param session_id: session id
     :param session_timeout: session timeout
     :return: a dict with following values:
         {
-            'bios_config': <data in case of BACKUP operation>,
+            'bios_config': <data in case of BACKUP/RESTORE_BIOS operation>,
+            'warning': <warning message if there is>
+        }
+    or
+        {
+            'raid_config': <data of raid adapter profile>,
             'warning': <warning message if there is>
         }
     """
@@ -535,14 +549,18 @@ def _process_session_bios_config(irmc_info, operation, session_id,
         elif status == 'terminated regularly':
             result = {}
 
-            if operation == 'BACKUP':
+            if operation == 'BACKUP_BIOS':
                 # Bios profile is created, get the data now
                 result['bios_config'] = elcm_profile_get(
                     irmc_info=irmc_info,
                     profile_name=PROFILE_BIOS_CONFIG)
-            elif operation == 'RESTORE':
+            elif operation == 'RESTORE_BIOS':
                 # Bios config applied successfully
                 pass
+            elif operation == 'CONFIG_RAID':
+                # Getting raid config
+                result['raid_config'] = elcm_profile_get(irmc_info,
+                                                         PROFILE_RAID_CONFIG)
 
             # Cleanup operation by deleting related session and profile.
             # In case of error, report it as warning instead of error.
@@ -550,8 +568,12 @@ def _process_session_bios_config(irmc_info, operation, session_id,
                 elcm_session_delete(irmc_info=irmc_info,
                                     session_id=session_id,
                                     terminate=True)
+                if operation == 'CONFIG_RAID':
+                    return result
+
                 elcm_profile_delete(irmc_info=irmc_info,
                                     profile_name=PROFILE_BIOS_CONFIG)
+
             except scci.SCCIError as e:
                 result['warning'] = e
 
@@ -562,14 +584,14 @@ def _process_session_bios_config(irmc_info, operation, session_id,
                                                session_id=session_id)
 
             raise scci.SCCIClientError(
-                ('Failed to %(operation)s bios config. '
+                ('Failed to %(operation)s config. '
                  'Session log is "%(session_log)s".' %
                  {'operation': operation,
                   'session_log': jsonutils.dumps(session_log)}))
 
     else:
         raise ELCMSessionTimeout(
-            ('Failed to %(operation)s bios config. '
+            ('Failed to %(operation)s config. '
              'Session %(session_id)s log is timeout.' %
              {'operation': operation,
               'session_id': session_id}))
@@ -578,7 +600,7 @@ def _process_session_bios_config(irmc_info, operation, session_id,
 def backup_bios_config(irmc_info):
     """backup current bios configuration
 
-    This function sends a BACKUP request to the server. Then when the bios
+    This function sends a BACKUP BIOS request to the server. Then when the bios
     config data are ready for retrieving, it will return the data to the
     caller. Note that this operation may take time.
 
@@ -609,9 +631,9 @@ def backup_bios_config(irmc_info):
     # 3. Profile creation is in progress, we monitor the session
     session_timeout = irmc_info.get('irmc_bios_session_timeout',
                                     BIOS_CONFIG_SESSION_TIMEOUT)
-    return _process_session_bios_config(
+    return _process_session_data(
         irmc_info=irmc_info,
-        operation='BACKUP',
+        operation='BACKUP_BIOS',
         session_id=session['Session']['Id'],
         session_timeout=session_timeout)
 
@@ -619,7 +641,8 @@ def backup_bios_config(irmc_info):
 def restore_bios_config(irmc_info, bios_config):
     """restore bios configuration
 
-    This function sends a RESTORE request to the server. Then when the bios
+    This function sends a RESTORE BIOS request to the server. Then when the
+    bios
     is ready for restoring, it will apply the provided settings and return.
     Note that this operation may take time.
 
@@ -666,10 +689,10 @@ def restore_bios_config(irmc_info, bios_config):
     # 4. Param values applying is in progress, we monitor the session
     session_timeout = irmc_info.get('irmc_bios_session_timeout',
                                     BIOS_CONFIG_SESSION_TIMEOUT)
-    _process_session_bios_config(irmc_info=irmc_info,
-                                 operation='RESTORE',
-                                 session_id=session['Session']['Id'],
-                                 session_timeout=session_timeout)
+    _process_session_data(irmc_info=irmc_info,
+                          operation='RESTORE_BIOS',
+                          session_id=session['Session']['Id'],
+                          session_timeout=session_timeout)
 
 
 def get_secure_boot_mode(irmc_info):
@@ -713,3 +736,246 @@ def set_secure_boot_mode(irmc_info, enable):
         }
     }
     restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def _update_raid_input_data(target_raid_config, raid_input):
+    """Process raid input data.
+
+    :param target_raid_config: node raid info
+    :param raid_input: raid information for creating via eLCM
+    :raises ELCMValueError: raise msg if wrong input
+    :return: raid_input: raid input data which create raid configuration
+        {
+          "Server":{
+            "HWConfigurationIrmc":{
+              "@Processing":"execute",
+              "Adapters":{
+                "RAIDAdapter":[
+                  {
+                    "@AdapterId":"RAIDAdapter0",
+                    "@ConfigurationType":"Addressing",
+                    "LogicalDrives":{
+                    "LogicalDrive":[
+                        {
+                          "@Number":0,
+                          "@Action":"Create",
+                          "RaidLevel":"1"
+                        }
+                      ]
+                    }
+                  }
+                ]
+               },
+               "@Version":"1.00"
+             },
+             "@Version":"1.01"
+           }
+        }
+    """
+
+    logical_disk_list = target_raid_config['logical_disks']
+
+    if len(logical_disk_list) < 1:
+        raise ELCMValueError(message="logical_disks must not be empty")
+
+    raid_input['Server']['HWConfigurationIrmc'].update({'@Processing':
+                                                        'execute'})
+    array_info = raid_input['Server']['HWConfigurationIrmc']['Adapters'][
+        'RAIDAdapter'][0]
+    array_info['LogicalDrives'] = {'LogicalDrive': []}
+    array_info['Arrays'] = {'Array': []}
+
+    for i, logical_disk in enumerate(logical_disk_list):
+        physical_disks = logical_disk.get('physical_disks')
+
+        # Auto create logical drive along with random physical disks.
+        # Allow auto create along with raid 10 and raid 50
+        # with specific physical drive.
+        if not physical_disks or logical_disk['raid_level'] == '10' \
+                or logical_disk['raid_level'] == '50' or \
+                logical_disk['raid_level'] == '60':
+            arrays = {
+                "@Number": i,
+                "@ConfigurationType": "Setting",
+            }
+            array_info['LogicalDrives']['LogicalDrive'].append(
+                {'@Action': 'Create',
+                 'RaidLevel': logical_disk['raid_level']})
+            array_info['LogicalDrives']['LogicalDrive'][i].update({
+                "@Number": i})
+            # Allow manual creating along with difference array, such as one
+            # array with physical drive and one array without them.
+            array_info['Arrays']['Array'].append(arrays)
+
+        else:
+            # Create array disks with specific physical servers
+            arrays = {
+                "@Number": i,
+                "@ConfigurationType": "Setting",
+                "PhysicalDiskRefs": {
+                    "PhysicalDiskRef": []
+                }
+            }
+
+            lo_drive = {
+                "@Number": i,
+                "@Action": "Create",
+                "RaidLevel": "",
+                "ArrayRefs": {
+                    "ArrayRef": [
+                    ]
+                }
+            }
+
+            array_info['Arrays']['Array'].append(arrays)
+            array_info['LogicalDrives']['LogicalDrive'].append(lo_drive)
+
+            lo_drive.update({'RaidLevel': logical_disk['raid_level']})
+            lo_drive['ArrayRefs']['ArrayRef'].append({"@Number": i})
+
+            for element in logical_disk['physical_disks']:
+                arrays['PhysicalDiskRefs']['PhysicalDiskRef'].append({
+                    '@Number': element})
+
+    return raid_input
+
+
+def get_raid_adapter(irmc_info):
+    """Collect raid information on the server.
+
+    :param irmc_info: node info
+    :returns: raid_adapter: get latest raid adapter information
+    """
+
+    # Update raid adapter, due to raid adapter cannot auto update after
+    # created raid configuration.
+    _create_raid_adapter_profile(irmc_info)
+
+    return elcm_profile_get(irmc_info, PROFILE_RAID_CONFIG)
+
+
+def _get_existing_logical_drives(raid_adapter):
+    """Collect existing logical drives on the server.
+
+    :param raid_adapter: raid adapter info
+    :returns: existing_logical_drives: get logical drive on server
+    """
+    existing_logical_drives = []
+    logical_drives = raid_adapter['Server']['HWConfigurationIrmc'][
+        'Adapters']['RAIDAdapter'][0].get('LogicalDrives')
+    if logical_drives is not None:
+        for drive in logical_drives['LogicalDrive']:
+            existing_logical_drives.append(drive['@Number'])
+
+    return existing_logical_drives
+
+
+def _create_raid_adapter_profile(irmc_info):
+    """Attempt delete exist adapter then create new raid adapter on the server.
+
+    :param irmc_info: node info
+    :returns: result: a dict with following values:
+                {
+                    'raid_config': <data of raid adapter profile>,
+                    'warning': <warning message if there is>
+                }
+    """
+
+    try:
+        # Attempt erase exist adapter on BM Server
+        elcm_profile_delete(irmc_info, PROFILE_RAID_CONFIG)
+    except ELCMProfileNotFound:
+        # Ignore this error as it's not an error in this case
+        pass
+
+    session = elcm_profile_create(irmc_info, PARAM_PATH_RAID_CONFIG)
+
+    # Monitoring currently session until done.
+    session_timeout = irmc_info.get('irmc_raid_session_timeout',
+                                    RAID_CONFIG_SESSION_TIMEOUT)
+
+    return _process_session_data(irmc_info, 'CONFIG_RAID',
+                                 session['Session']['Id'],
+                                 session_timeout)
+
+
+def create_raid_configuration(irmc_info, target_raid_config):
+    """Process raid_input then perform raid configuration into server.
+
+    :param irmc_info: node info
+    :param target_raid_config: node raid information
+    """
+
+    # Check RAID config in the new RAID adapter. Must be erased before
+    # create new RAID config.
+    raid_adapter = get_raid_adapter(irmc_info)
+    logical_drives = raid_adapter['Server']['HWConfigurationIrmc'][
+        'Adapters']['RAIDAdapter'][0]['LogicalDrives']
+    session_timeout = irmc_info.get('irmc_raid_session_timeout',
+                                    RAID_CONFIG_SESSION_TIMEOUT)
+    if logical_drives is not None:
+        raid_adapter['Server']['HWConfigurationIrmc'].update({
+            '@Processing': 'execute'})
+        for logical_drive in logical_drives['LogicalDrive']:
+            logical_drive.update({"@Action": "Delete"})
+        # Delete exist logical drives in server.
+        # NOTE(trungnv): Wait session complete and raise error if
+        # delete raid config during BGI(BackGround Initialize) in-progress
+        # in previous mechanism.
+        session = elcm_profile_set(irmc_info, raid_adapter)
+        # Monitoring raid delete session until done.
+        _process_session_data(irmc_info, 'CONFIG_RAID',
+                              session['Session']['Id'],
+                              session_timeout)
+        # Updating raid adapter profile after deleted profile.
+        raid_adapter = get_raid_adapter(irmc_info)
+
+    # Create raid configuration based on target_raid_config of node
+    raid_input = _update_raid_input_data(target_raid_config, raid_adapter)
+    session = elcm_profile_set(irmc_info, raid_input)
+    # Monitoring raid creation session until done.
+    _process_session_data(irmc_info, 'CONFIG_RAID',
+                          session['Session']['Id'],
+                          session_timeout)
+
+
+def delete_raid_configuration(irmc_info, logical_drive_slot=None):
+    """Delete whole raid configuration or one of logical drive on the server.
+
+    :param irmc_info: node info
+    :param logical_drive_slot: By default, will delete whole raid config.
+    or just delete one of logical drives in raid config
+    """
+    # Attempt to get raid configuration on BM Server
+    raid_adapter = get_raid_adapter(irmc_info)
+    existing_logical_drives = _get_existing_logical_drives(raid_adapter)
+    # Ironic requires delete_configuration first. Will pass if blank raid
+    # configuration in server.
+    if not existing_logical_drives:
+        return
+    raid_adapter['Server']['HWConfigurationIrmc'].update({
+        '@Processing': 'execute'})
+    logical_drive = raid_adapter['Server']['HWConfigurationIrmc'][
+        'Adapters']['RAIDAdapter'][0]['LogicalDrives']['LogicalDrive']
+
+    if logical_drive_slot is not None:
+        if isinstance(logical_drive_slot, int) and logical_drive_slot in \
+                existing_logical_drives:
+            logical_drive[logical_drive_slot]['@Action'] = 'Delete'
+        else:
+            raise ELCMValueError('Cannot delete RAID config with logical '
+                                 'drive input')
+    else:
+        for drive in logical_drive:
+            drive['@Action'] = 'Delete'
+
+    # Attempt to delete some logical drive in the raid config
+    session = elcm_profile_set(irmc_info, raid_adapter)
+    # Monitoring raid config delete session until done.
+    session_timeout = irmc_info.get('irmc_raid_session_timeout',
+                                    RAID_CONFIG_SESSION_TIMEOUT)
+    _process_session_data(irmc_info, 'CONFIG_RAID', session['Session']['Id'],
+                          session_timeout)
+
+    # Attempt to delete raid adapter
+    elcm_profile_delete(irmc_info, PROFILE_RAID_CONFIG)
