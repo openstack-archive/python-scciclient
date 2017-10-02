@@ -827,3 +827,35 @@ class SCCITestCase(testtools.TestCase):
                               gpu_ids,
                               **kwargs)
         self.assertEqual('Capabilities inspection failed: IPMI error', str(e))
+
+    def test_fail_get_raid_bgi_status(self):
+        report_fake = self.report_ok_xml.copy()
+        report_fake.find("./Software/ServerView/ServerViewRaid").clear()
+        self.assertRaises(scci.SCCIInvalidInputError,
+                          scci.get_raid_bgi_status, report=report_fake)
+
+    def test_fail_get_raid_bgi_status_1(self):
+        report_fake = self.report_ok_xml.copy()
+        report_fake.find("./Software/ServerView/ServerViewRaid/amEMSV"
+                         "/System/Adapter").clear()
+        self.assertRaises(scci.SCCIInvalidInputError,
+                          scci.get_raid_bgi_status, report=report_fake)
+
+    def test_get_raid_bgi_status_ok(self):
+
+        # Fake activity status of BGI in xml report
+        url = "./Software/ServerView/ServerViewRaid/amEMSV/System/Adapter"
+        report_fake = self.report_ok_xml.copy()
+        report_input = report_fake.find(url)
+        element_1 = ET.Element("LogicalDrive", name="LogicalDrive")
+        element_2 = ET.Element("LogDriveNumber", name="LogDriveNumber")
+        element_3 = ET.Element("Activity", name="Activity")
+        report_input.append(element_1)
+        report_input.find("./LogicalDrive").append(element_2)
+        report_fake.find(url + "/LogicalDrive/LogDriveNumber").text = '0'
+        report_input.find("./LogicalDrive").append(element_3)
+        report_fake.find(url + "/LogicalDrive/Activity").text = 'Idle'
+
+        bgi_status_expect = [{'0': 'Idle'}]
+        result = scci.get_raid_bgi_status(report_fake)
+        self.assertEqual(result, bgi_status_expect)
