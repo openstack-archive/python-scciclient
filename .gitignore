@@ -51,3 +51,8 @@ ChangeLog
 *~
 .*.swp
 .*sw?
+
+# Misc
+
+*.idea
+
