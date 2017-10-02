@@ -541,3 +541,34 @@ def get_capabilities_properties(d_info,
         return v
     except (snmp.SNMPFailure, ipmi.IPMIFailure) as err:
         raise SCCIClientError('Capabilities inspection failed: %s' % err)
+
+
+def get_raid_bgi_status(report):
+    """Gather bgi(background initialize) information of raid configuration
+
+    This function returns a bgi status which contains activity status
+    and its values from the report.
+
+    :param report: SCCI report information
+    :returns: dict of bgi status of logical_drives, such as BGI(10%) or
+              Idle. e.g: {'0': 'Idle', '1': 'BGI(10%)'}
+    :raises: SCCIInvalidInputError: fail report input.
+    """
+    bgi_status = {}
+    raid_path = "./Software/ServerView/ServerViewRaid"
+
+    if not report.find(raid_path):
+        raise SCCIInvalidInputError(
+            "ServerView RAID not available in Bare metal Server")
+    if not report.find(raid_path + "/amEMSV/System/Adapter/LogicalDrive"):
+        raise SCCIInvalidInputError(
+            "RAID configuration not configure in Bare metal Server yet")
+
+    logical_drives = report.findall(raid_path +
+                                    "/amEMSV/System/Adapter/LogicalDrive")
+    for logical_drive_name in logical_drives:
+        status = logical_drive_name.find("./Activity").text
+        name = logical_drive_name.find("./LogDriveNumber").text
+        bgi_status.update({name: status})
+
+    return bgi_status
