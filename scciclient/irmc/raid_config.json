@@ -1,0 +1,24 @@
+{
+  "Server": {
+    "HWConfigurationIrmc": {
+      "@Processing": "execute",
+      "Adapters": {
+        "RAIDAdapter": [
+          {
+            "@AdapterId": "RAIDAdapter0",
+            "@ConfigurationType": "Addressing",
+            "PCIId": {},
+            "Arrays": {
+              "Array": [
+              ]
+            },
+            "LogicalDrives": {
+              "LogicalDrive": [
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
