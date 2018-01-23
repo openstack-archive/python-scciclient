@@ -78,8 +78,8 @@ class IpmiTestCase(testtools.TestCase):
         exec_mock.assert_called_once_with(mock.ANY, cmd)
 
     @mock.patch.object(ipmi, '_send_raw_command')
-    def test_get_gpu(self, exec_mock):
-        gpu_ids = ['0x1000/0x0079', '0x2100/0x0080']
+    def test_get_pci(self, exec_mock):
+        pci_device_ids = ['0x1000/0x0079', '0x2100/0x0080']
 
         exec_mock.side_effect = ({'command': 0xF1, 'code': 0x00, 'netfn': 0x2F,
                                   'data': [0x80, 0x28, 0x00, 0x00, 0x00, 0x05,
@@ -91,22 +91,22 @@ class IpmiTestCase(testtools.TestCase):
 
         cmd1 = "0x2E 0xF1 0x80 0x28 0x00 0x1A 0x1 0x00"
         cmd2 = "0x2E 0xF1 0x80 0x28 0x00 0x1A 0x2 0x00"
-        actual_out = ipmi.get_gpu(self.info, gpu_ids)
+        actual_out = ipmi.get_pci_device(self.info, pci_device_ids)
         self.assertEqual(1, actual_out)
         exec_mock.assert_has_calls([mock.call(mock.ANY, cmd1),
                                     mock.call(mock.ANY, cmd2)])
 
     @mock.patch.object(ipmi, '_send_raw_command')
-    def test_get_gpu_blank(self, exec_mock):
-        gpu_ids = []
+    def test_get_pci_blank(self, exec_mock):
+        pci_device_ids = []
 
-        actual_out = ipmi.get_gpu(self.info, gpu_ids)
+        actual_out = ipmi.get_pci_device(self.info, pci_device_ids)
         self.assertEqual(0, actual_out)
         self.assertTrue(exec_mock.called)
 
     @mock.patch.object(ipmi, '_send_raw_command')
-    def test_get_gpu_not_found(self, exec_mock):
-        gpu_ids = ['0x1111/0x1179', '0x2100/0x0080']
+    def test_get_pci_not_found(self, exec_mock):
+        pci_device_ids = ['0x1111/0x1179', '0x2100/0x0080']
 
         exec_mock.side_effect = ({'command': 0xF1, 'code': 0x00, 'netfn': 0x2F,
                                   'data': [0x80, 0x28, 0x00, 0x00, 0x00, 0x05,
@@ -117,23 +117,23 @@ class IpmiTestCase(testtools.TestCase):
                                   'data': [0x80, 0x28, 0x00]})
         cmd1 = "0x2E 0xF1 0x80 0x28 0x00 0x1A 0x1 0x00"
         cmd2 = "0x2E 0xF1 0x80 0x28 0x00 0x1A 0x2 0x00"
-        actual_out = ipmi.get_gpu(self.info, gpu_ids)
+        actual_out = ipmi.get_pci_device(self.info, pci_device_ids)
         self.assertEqual(0, actual_out)
         exec_mock.assert_has_calls([mock.call(mock.ANY, cmd1),
                                     mock.call(mock.ANY, cmd2)])
 
     @mock.patch.object(ipmi, '_send_raw_command')
-    def test_get_gpu_exception(self, exec_mock):
-        gpu_ids = ['0x1111/0x1179', '0x2100/0x0080']
+    def test_get_pci_exception(self, exec_mock):
+        pci_device_ids = ['0x1111/0x1179', '0x2100/0x0080']
 
         exec_mock.side_effect = ipmi_exception.IpmiException('Error')
 
         cmd = "0x2E 0xF1 0x80 0x28 0x00 0x1A 0x1 0x00"
 
         e = self.assertRaises(ipmi.IPMIFailure,
-                              ipmi.get_gpu,
+                              ipmi.get_pci_device,
                               self.info,
-                              gpu_ids)
+                              pci_device_ids)
         exec_mock.assert_called_once_with(mock.ANY, cmd)
-        self.assertEqual('IPMI operation \'GET GPU device quantity\' '
+        self.assertEqual('IPMI operation \'GET PCI device quantity\' '
                          'failed: Error', str(e))
