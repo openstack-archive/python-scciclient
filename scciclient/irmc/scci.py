@@ -492,7 +492,8 @@ def get_essential_properties(report, prop_keys):
 
 def get_capabilities_properties(d_info,
                                 capa_keys,
-                                pci_device_ids,
+                                gpu_ids=[],
+                                fpga_ids=[],
                                 **kwargs):
     """get capabilities properties
 
@@ -502,8 +503,10 @@ def get_capabilities_properties(d_info,
 
     :param d_info: the dictionary of ipmitool parameters for accessing a node.
     :param capa_keys: a list of keys for additional capabilities properties.
-    :param pci_device_ids: the list of string contains <vendorID>/<deviceID>
+    :param gpu_ids: the list of string contains <vendorID>/<deviceID>
     for GPU.
+    :param fpga_ids: the list of string contains <vendorID>/<deviceID>
+    for CPU FPGA.
     :param kwargs: additional arguments passed to scciclient.
     :returns: a dictionary which contains keys and their values.
     """
@@ -529,11 +532,15 @@ def get_capabilities_properties(d_info,
         # Sometime the server started but PCI device list building is
         # still in progress so system will response error. We have to wait
         # for some more seconds.
-        if kwargs.get('sleep_flag', False) and 'pci_gpu_devices' in capa_keys:
+        if kwargs.get('sleep_flag', False) and \
+                any(k in capa_keys for k in ('pci_gpu_devices', 'cpu_fpga')):
             time.sleep(5)
 
         if 'pci_gpu_devices' in capa_keys:
-            v['pci_gpu_devices'] = ipmi.get_gpu(d_info, pci_device_ids)
+            v['pci_gpu_devices'] = ipmi.get_pci_device(d_info, gpu_ids)
+
+        if 'cpu_fpga' in capa_keys:
+            v['cpu_fpga'] = ipmi.get_pci_device(d_info, fpga_ids)
 
         if 'trusted_boot' in capa_keys:
             v['trusted_boot'] = ipmi.get_tpm_status(d_info)
