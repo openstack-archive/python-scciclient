@@ -127,20 +127,18 @@ def _pci_seq(ipmicmd):
 
 
 def get_gpu(d_info, pci_device_ids):
-    """Get quantity of GPU devices on PCI and quantity of CPUs with FPGA.
+    """Get quantity of GPU devices on PCI.
 
-    Get quantity of GPU devices on PCI and quantity of CPUs with FPGA of the
-    node.
+    Get quantity of GPU devices on PCI of the node.
 
     :param d_info: the list of ipmitool parameters for accessing a node.
     :param pci_device_ids: the list contains pairs of <vendorID>/<deviceID> for
     GPU on PCI.
-    :returns: a tuple of the number of GPU devices on PCI and the number of
-    CPUs with FPGA.
+    :returns: a tuple of the number of GPU devices on PCI.
     """
 
     # note:
-    # Get quantity of GPU devices on PCI and quantity of CPUs with FPGA:
+    # Get quantity of GPU devices on PCI:
     # ipmi cmd '0xF1'
     #
     # $ ipmitool raw 0x2E 0xF1 0x80 0x28 0x00 0x1A 0x01 0x00
@@ -170,3 +168,32 @@ def get_gpu(d_info, pci_device_ids):
     gpu_count = functools.reduce(_pci_count, response, 0)
 
     return gpu_count
+
+
+def get_cpu_fpgas(d_info, pci_device_ids):
+    """Get quantity of CPUs with FPGA.
+
+    Get quantity of CPUs with FPGA of the node.
+
+    :param d_info: the list of ipmitool parameters for accessing a node.
+    :param pci_device_ids: the list contains pairs of <vendorID>/<deviceID> for
+    CPUs with FPGA.
+    :returns: a tuple of the number of CPUs with FPGA.
+    """
+
+    # note:
+    # Get quantity of CPUs with FPGA:
+    # ipmi cmd '0xF1'
+    #
+    # $ ipmitool raw 0x2E 0xF1 0x80 0x28 0x00 0x1A 0x01 0x00
+    #
+    # Raw response:
+    # 80 28 00 00 00 05 data1 data2 34 17 76 11 00 04
+    # 01
+
+    # data1: 2 octet of VendorID
+    # data2: 2 octet of DeviceID
+
+    cpu_fpgas_count = get_gpu(d_info, pci_device_ids)
+
+    return cpu_fpgas_count
