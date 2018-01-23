@@ -493,6 +493,7 @@ def get_essential_properties(report, prop_keys):
 def get_capabilities_properties(d_info,
                                 capa_keys,
                                 pci_device_ids,
+                                cpu_fpga_ids,
                                 **kwargs):
     """get capabilities properties
 
@@ -533,7 +534,10 @@ def get_capabilities_properties(d_info,
             time.sleep(5)
 
         if 'pci_gpu_devices' in capa_keys:
-            v['pci_gpu_devices'] = ipmi.get_gpu(d_info, pci_device_ids)
+            v['pci_gpu_devices'] = ipmi.get_pci_device(d_info, pci_device_ids)
+
+        if 'cpu_fpga' in capa_keys:
+            v['cpu_fpga'] = ipmi.get_pci_device(d_info, cpu_fpga_ids)
 
         if 'trusted_boot' in capa_keys:
             v['trusted_boot'] = ipmi.get_tpm_status(d_info)
