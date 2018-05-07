@@ -17,6 +17,7 @@ eLCM functionality.
 """
 
 import collections
+import six
 import time
 
 from oslo_serialization import jsonutils
@@ -52,6 +53,116 @@ PROFILE_SET_TIMEOUT = 300  # 300 secs
 BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 RAID_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 
+BIOS_CONFIGURATION_DICTIONARY = {
+    "ASPMSupport": "PciConfig",
+    "Above4GDecodingEnabled": "PciConfig",
+    "ActiveProcessorCores": "CpuConfig",
+    "AdjacentCacheLinePrefetchEnabled": "CpuConfig",
+    "AdminPassword": "SecurityConfig",
+    "BootOptionFilter": "CsmConfig",
+    "BootRemovableMediaEnabled": "BootConfig",
+    "C1ESupportEnabled": "CpuConfig",
+    "C3ReportEnabled": "CpuConfig",
+    "C6ReportEnabled": "CpuConfig",
+    "C7ReportEnabled": "CpuConfig",
+    "CStateLimit": "CpuConfig",
+    "CheckControllersHealthStatusEnabled": "BootConfig",
+    "CnaEnabled": "OnboardDeviceConfig",
+    "CnaOptionRomEnabled": "OnboardDeviceConfig",
+    "CnaStandbyEnabled": "OnboardDeviceConfig",
+    "DMILinkSpeed": "PciConfig",
+    "DcuIpPrefetchEnabled": "CpuConfig",
+    "DcuStreamerPrefetchEnabled": "CpuConfig",
+    "DdrPerformance": "MemoryConfig",
+    "EarlySnoop": "CpuConfig",
+    "Enabled": "NetworkStackConfig",
+    "EnergyPerformanceMode": "CpuConfig",
+    "EnhancedSpeedStepEnabled": "CpuConfig",
+    "ExecuteDisableBitEnabled": "CpuConfig",
+    "FactoryDefaultKeyProvisionEnabled": "SecurityConfig",
+    "FlashWriteEnabled": "SecurityConfig",
+    "FrequencyFloorOverwriteEnabled": "CpuConfig",
+    "HardwarePrefetcherEnabled": "CpuConfig",
+    "HashPolicy": "TpmConfig",
+    "HyperThreadingEnabled": "CpuConfig",
+    "IOConfig": "SerialPortConfig",
+    "IpV4PxeSupportEnabled": "NetworkStackConfig",
+    "IpV6PxeSupportEnabled": "NetworkStackConfig",
+    "KeepVoidBootOptionsEnabled": "BootConfig",
+    "LaunchCsmEnabled": "CsmConfig",
+    "LegacySupport": "UsbConfig",
+    "LimitCpuIdMaximumEnabled": "CpuConfig",
+    "MemoryHoleSize": "PciConfig",
+    "MemoryMode": "MemoryConfig",
+    "NewAdminPassword": "SecurityConfig",
+    "NewUserPassword": "SecurityConfig",
+    "NumLockState": "BootConfig",
+    "NumaEnabled": "MemoryConfig",
+    "OnboardControllersEnabled": "UsbConfig",
+    "OptionRomLan1Mode": "OptionRomConfig",
+    "OptionRomLan2Mode": "OptionRomConfig",
+    "OptionRomSlot1Enabled": "OptionRomConfig",
+    "OptionRomSlot2Enabled": "OptionRomConfig",
+    "OptionRomSlot3Enabled": "OptionRomConfig",
+    "OptionRomSlot4Enabled": "OptionRomConfig",
+    "OptionRomSlot5Enabled": "OptionRomConfig",
+    "OptionRomSlot6Enabled": "OptionRomConfig",
+    "OptionRomSlot7Enabled": "OptionRomConfig",
+    "OptionRomSlot8Enabled": "OptionRomConfig",
+    "OptionRomSlot9Enabled": "OptionRomConfig",
+    "OsEnergyPerformanceOverrideEnabled": "CpuConfig",
+    "OtherPciDeviceRomPriority": "CsmConfig",
+    "PStateCoordinationMode": "CpuConfig",
+    "PciSlot10Status": "PciConfig",
+    "PciSlot11Status": "PciConfig",
+    "PciSlot12Status": "PciConfig",
+    "PciSlot13Status": "PciConfig",
+    "PciSlot14Status": "PciConfig",
+    "PciSlot15Status": "PciConfig",
+    "PciSlot16Status": "PciConfig",
+    "PciSlot1Status": "PciConfig",
+    "PciSlot2Status": "PciConfig",
+    "PciSlot3Status": "PciConfig",
+    "PciSlot4Status": "PciConfig",
+    "PciSlot5Status": "PciConfig",
+    "PciSlot6Status": "PciConfig",
+    "PciSlot7Status": "PciConfig",
+    "PciSlot8Status": "PciConfig",
+    "PciSlot9Status": "PciConfig",
+    "PendingTpmOperation": "TpmConfig",
+    "Port1Enabled": "SerialPortConfig",
+    "Port2Enabled": "SerialPortConfig",
+    "PortDisable": "UsbConfig",
+    "PowerOnSource": "PowerConfig",
+    "PowerTechnology": "CpuConfig",
+    "PxeBootOptionRetry": "BootConfig",
+    "PxeOptionRomPolicy": "CsmConfig",
+    "QpiLink1Disabled": "CpuConfig",
+    "QpiLinkSpeed": "CpuConfig",
+    "QuietBootEnabled": "BootConfig",
+    "SasSataDriver": "OnboardDeviceConfig",
+    "SasSataEnabled": "OnboardDeviceConfig",
+    "SasSataOptionRomEnabled": "OnboardDeviceConfig",
+    "SataControllerEnabled": "SataConfig",
+    "SataMode": "SataConfig",
+    "SecureBootControlEnabled": "SecurityConfig",
+    "SecureBootMode": "SecurityConfig",
+    "SingleRootIOVirtualizationSupportEnabled": "PciConfig",
+    "SkipPasswordOnWol": "SecurityConfig",
+    "StorageOptionRomPolicy": "CsmConfig",
+    "TpmStateEnabled": "TpmConfig",
+    "TurboModeEnabled": "CpuConfig",
+    "UncoreFrequenceyOverrideEnabled": "CpuConfig",
+    "UserPassword": "SecurityConfig",
+    "UserPasswordOnBoot": "SecurityConfig",
+    "UtilizationProfile": "CpuConfig",
+    "VideoOptionRomPolicy": "CsmConfig",
+    "VtEnabled": "CpuConfig",
+    "VtdEnabled": "CpuConfig",
+    "WakeOnLanBoot": "PowerConfig",
+    "XHCIMode": "UsbConfig"
+}
+
 
 class ELCMInvalidResponse(scci.SCCIError):
     def __init__(self, message):
@@ -81,6 +192,11 @@ class SecureBootConfigNotFound(scci.SCCIError):
 class ELCMValueError(scci.SCCIError):
     def __init__(self, message):
         super(ELCMValueError, self).__init__(message)
+
+
+class BiosConfigNotFound(scci.SCCIError):
+    def __init__(self, message):
+        super(BiosConfigNotFound, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -964,3 +1080,52 @@ def delete_raid_configuration(irmc_info):
 
     # Attempt to delete raid adapter
     elcm_profile_delete(irmc_info, PROFILE_RAID_CONFIG)
+
+
+def set_bios_configuration(irmc_info, settings):
+    """Set BIOS configurations on the server.
+
+    :param irmc_info: node info
+    :param settings: Dictionary containing the BIOS configuration.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+    configs = {}
+    for setting_param in settings:
+        setting_name = setting_param.get("name")
+        setting_value = setting_param.get("value")
+        try:
+            type_config = BIOS_CONFIGURATION_DICTIONARY[setting_name]
+            if type_config in configs.keys():
+                configs[type_config].update({setting_name: setting_value})
+            else:
+                configs.update({type_config: {setting_name: setting_value}})
+        except KeyError:
+            raise BiosConfigNotFound("Invalid BIOS setting: %s"
+                                     % setting_param)
+    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def get_bios_settings(irmc_info):
+    """Get the current BIOS settings on the server
+
+    :param irmc_info: node info.
+    :returns: a list of dictionary BIOS settings
+    """
+
+    bios_config = backup_bios_config(irmc_info)['bios_config']
+    bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
+    settings = []
+    for setting_param, type_config in six.iteritems(
+            BIOS_CONFIGURATION_DICTIONARY):
+        if setting_param in bios_config_data.get(type_config, {}):
+            value = bios_config_data[type_config][setting_param]
+            settings.append({'name': setting_param, 'value': value})
+    return settings
