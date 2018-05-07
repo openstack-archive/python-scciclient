@@ -713,3 +713,46 @@ def set_secure_boot_mode(irmc_info, enable):
         }
     }
     restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def set_bios_configuration(irmc_info, settings):
+    """Set BIOS configurations on the server.
+
+    :param irmc_info: node info
+    :param bios_settings: Dictionary containing the BIOS configuration.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+    configs = {}
+    for setting in settings['settings']:
+        configs.update({
+            setting['name'].split("/")[0]: {
+                setting['name'].split("/")[1]: setting.get('value', None)
+            }
+        })
+    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def get_bios_settings(irmc_info):
+    """Get the current BIOS settings on the server
+
+    :param irmc_info: node info.
+    :return: settings: Dictionary containing the BIOS configuration.
+    """
+
+    bios_config = backup_bios_config(irmc_info)['bios_config']
+    bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
+    settings = []
+    for tyconfig in bios_config_data.keys():
+        for config in bios_config_data[tyconfig].keys():
+            setting = {'name': "%s/%s" % (tyconfig, config),
+                       'value': bios_config_data[tyconfig][config]}
+            settings.append(setting)
+    return settings
