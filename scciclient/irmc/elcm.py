@@ -52,6 +52,59 @@ PROFILE_SET_TIMEOUT = 300  # 300 secs
 BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 RAID_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 
+BIOS_CONFIGURATION_DICTIONARY = {
+    "srio_virtualization_enabled":
+        "PciConfig_SingleRootIOVirtualizationSupportEnabled",
+    "execute_disable_bit_enabled":
+        "CpuConfig_ExecuteDisableBitEnabled",
+    "limit_cpu_id_maximum_enabled":
+        "CpuConfig_LimitCpuIdMaximumEnabled",
+    "os_energy_performance_override_enabled":
+        "CpuConfig_OsEnergyPerformanceOverrideEnabled",
+    "cna_enabled": "OnboardDeviceConfig_CnaEnabled",
+    "adjacent_cache_line_prefetch_enabled":
+        "CpuConfig_AdjacentCacheLinePrefetchEnabled",
+    "boot_removable_media_enabled":
+        "BootConfig_BootRemovableMediaEnabled",
+    "ip_v6_pxe_support_enabled":
+        "NetworkStackConfig_IpV6PxeSupportEnabled",
+    "numa_enabled": "MemoryConfig_NumaEnabled",
+    "ip_v4_pxe_support_enabled": "NetworkStackConfig_IpV4PxeSupportEnabled",
+    "enhanced_speed_step_enabled": "CpuConfig_EnhancedSpeedStepEnabled",
+    "sas_sata_option_rom_enabled":
+        "OnboardDeviceConfig_SasSataOptionRomEnabled",
+    "tpm_state_enabled": "TpmConfig_TpmStateEnabled",
+    "secure_boot_enabled": "SecurityConfig_SecureBootControlEnabled",
+    "vtd_enabled": "CpuConfig_VtdEnabled",
+    "frequency_floor_overwrite_enabled":
+        "CpuConfig_FrequencyFloorOverwriteEnabled",
+    "hyper_threading_enabled": "CpuConfig_HyperThreadingEnabled",
+    "check_controllers_health_status_enabled":
+        "BootConfig_CheckControllersHealthStatusEnabled",
+    "vt_enabled": "CpuConfig_VtEnabled",
+    "dcu_ip_prefetch_enabled": "CpuConfig_DcuIpPrefetchEnabled",
+    "turbo_mode_enabled": "CpuConfig_TurboModeEnabled",
+    "cna_option_rom_enabled": "OnboardDeviceConfig_CnaOptionRomEnabled",
+    "cna_standby_enabled": "OnboardDeviceConfig_CnaStandbyEnabled",
+    "dcu_streamer_prefetch_enabled": "CpuConfig_DcuStreamerPrefetchEnabled",
+    "keep_void_boot_options_enabled": "BootConfig_KeepVoidBootOptionsEnabled",
+    "c1e_support_enabled": "CpuConfig_C1ESupportEnabled",
+    "hardware_prefetcher_enabled": "CpuConfig_HardwarePrefetcherEnabled",
+    "sas_sata_enabled": "OnboardDeviceConfig_SasSataEnabled",
+    "quiet_boot_enabled": "BootConfig_QuietBootEnabled",
+    "above_4g_decoding_enabled": "PciConfig_Above4GDecodingEnabled",
+    "factory_default_key_provision_enabled":
+        "SecurityConfig_FactoryDefaultKeyProvisionEnabled",
+    "network_stack_config_enabled": "NetworkStackConfig_Enabled",
+    "sata_controller_enabled": "SataConfig_SataControllerEnabled",
+    "launch_csm_enabled": "CsmConfig_LaunchCsmEnabled",
+    "onboard_controllers_enabled": "UsbConfig_OnboardControllersEnabled",
+    "flash_write_enabled": "SecurityConfig_FlashWriteEnabled",
+    "uncore_frequencey_override_enabled":
+        "CpuConfig_UncoreFrequenceyOverrideEnabled",
+    "pxe_boot_option_retry": "BootConfig_PxeBootOptionRetry"
+}
+
 
 class ELCMInvalidResponse(scci.SCCIError):
     def __init__(self, message):
@@ -81,6 +134,11 @@ class SecureBootConfigNotFound(scci.SCCIError):
 class ELCMValueError(scci.SCCIError):
     def __init__(self, message):
         super(ELCMValueError, self).__init__(message)
+
+
+class BiosConfigNotFound(scci.SCCIError):
+    def __init__(self, message):
+        super(BiosConfigNotFound, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -964,3 +1022,56 @@ def delete_raid_configuration(irmc_info):
 
     # Attempt to delete raid adapter
     elcm_profile_delete(irmc_info, PROFILE_RAID_CONFIG)
+
+
+def set_bios_configuration(irmc_info, settings):
+    """Set BIOS configurations on the server.
+
+    :param irmc_info: node info
+    :param settings: Dictionary containing the BIOS configuration.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+    configs = {}
+    for setting_param in settings:
+        setting_name = setting_param.get("name", None)
+        setting_value = setting_param.get("value", None)
+        try:
+            type_config, config = BIOS_CONFIGURATION_DICTIONARY.get(
+                setting_name, None).split("_")
+            if type_config in configs.keys():
+                configs[type_config].update({config: setting_value})
+            else:
+                configs.update({type_config: {config: setting_value}})
+        except AttributeError:
+            raise BiosConfigNotFound("Invalid BIOS setting: %s"
+                                     % setting_param)
+    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def get_bios_settings(irmc_info):
+    """Get the current BIOS settings on the server
+
+    :param irmc_info: node info.
+    :returns: a list of dictionary BIOS settings
+    """
+
+    bios_config = backup_bios_config(irmc_info)['bios_config']
+    bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
+    settings = []
+    for setting_param in BIOS_CONFIGURATION_DICTIONARY.keys():
+        type_config, config = BIOS_CONFIGURATION_DICTIONARY.get(
+            setting_param, None).split("_")
+        if type_config in bios_config_data.keys() and \
+                config in bios_config_data[type_config].keys():
+            value = bios_config_data[type_config][config]
+            setting = {'name': setting_param, 'value': value}
+            settings.append(setting)
+    return settings

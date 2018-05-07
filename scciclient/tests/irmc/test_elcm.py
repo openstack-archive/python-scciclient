@@ -2307,3 +2307,65 @@ class ELCMTestCase(testtools.TestCase):
             self.irmc_info, elcm.PARAM_PATH_RAID_CONFIG)
         elcm_profile_delete_mock.assert_called_once_with(
             self.irmc_info, elcm.PROFILE_RAID_CONFIG)
+
+    @mock.patch.object(elcm, 'restore_bios_config')
+    def test_set_bios_configuration(self, restore_bios_config_mock):
+        settings = [{
+            "name": "pxe_boot_option_retry",
+            "value": True
+        }, {
+            "name": "hyper_threading_enabled",
+            "value": True
+        }, {
+            "name": "execute_disable_bit_enabled",
+            "value": True
+        }]
+        bios_config_data = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'BootConfig': {
+                            'PxeBootOptionRetry': True
+                        },
+                        'CpuConfig': {
+                            'HyperThreadingEnabled': True,
+                            'ExecuteDisableBitEnabled': True
+                        }
+                    }
+                }
+            }
+        }
+        elcm.set_bios_configuration(irmc_info=self.irmc_info,
+                                    settings=settings)
+        restore_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'backup_bios_config')
+    def test_get_bios_settings(self, backup_bios_config_mock):
+        backup_bios_config_mock.return_value = {
+            'bios_config': {
+                "Server": {
+                    "SystemConfig": {
+                        "BiosConfig": {
+                            "BootConfig": {
+                                "PxeBootOptionRetry": True,
+                            },
+                            "CpuConfig": {
+                                "HyperThreadingEnabled": True,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        result = elcm.get_bios_settings(irmc_info=self.irmc_info)
+        expect_settings = [{
+            "name": "pxe_boot_option_retry",
+            "value": True
+        }, {
+            "name": "hyper_threading_enabled",
+            "value": True
+        }]
+        self.assertItemsEqual(expect_settings, result)
+        backup_bios_config_mock.assert_called_once_with(
+            self.irmc_info)
