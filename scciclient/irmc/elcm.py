@@ -52,6 +52,63 @@ PROFILE_SET_TIMEOUT = 300  # 300 secs
 BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 RAID_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 
+BIOS_CONFIGURATION_DICTIONARY = {
+    "boot_option_filter": "CsmConfig_BootOptionFilter",
+    "boot_removable_media_enabled": "BootConfig_BootRemovableMediaEnabled",
+    "check_controllers_health_status_enabled":
+        "BootConfig_CheckControllersHealthStatusEnabled",
+    "cpu_active_processor_cores": "CpuConfig_ActiveProcessorCores",
+    "cpu_adjacent_cache_line_prefetch_enabled":
+        "CpuConfig_AdjacentCacheLinePrefetchEnabled",
+    "cpu_dcu_ip_prefetch_enabled": "CpuConfig_DcuIpPrefetchEnabled",
+    "cpu_early_snoop": "CpuConfig_EarlySnoop",
+    "cpu_energy_performance_mode": "CpuConfig_EnergyPerformanceMode",
+    "cpu_enhanced_speed_step_enabled": "CpuConfig_EnhancedSpeedStepEnabled",
+    "cpu_execute_disable_bit_enabled": "CpuConfig_ExecuteDisableBitEnabled",
+    "cpu_frequency_floor_overwrite_enabled":
+        "CpuConfig_FrequencyFloorOverwriteEnabled",
+    "cpu_hardware_prefetcher_enabled": "CpuConfig_HardwarePrefetcherEnabled",
+    "cpu_power_technology": "CpuConfig_PowerTechnology",
+    "cpu_turbo_mode_enabled": "CpuConfig_TurboModeEnabled",
+    "cpu_uncore_frequencey_override_enabled":
+        "CpuConfig_UncoreFrequenceyOverrideEnabled",
+    "cpu_vt_enabled": "CpuConfig_VtEnabled",
+    "hyper_threading_enabled": "CpuConfig_HyperThreadingEnabled",
+    "keep_void_boot_options_enabled": "BootConfig_KeepVoidBootOptionsEnabled",
+    "launch_csm_enabled": "CsmConfig_LaunchCsmEnabled",
+    "limit_cpu_id_maximum_enabled": "CpuConfig_LimitCpuIdMaximumEnabled",
+    "memory_mode": "MemoryConfig_MemoryMode",
+    "network_stack_enabled": "NetworkStackConfig_Enabled",
+    "os_energy_performance_override_enabled":
+        "CpuConfig_OsEnergyPerformanceOverrideEnabled",
+    "pci_aspm_support": "PciConfig_ASPMSupport",
+    "pci_above4_g_decoding_enabled": "PciConfig_Above4GDecodingEnabled",
+    "pending_tpm_operation": "TpmConfig_PendingTpmOperation",
+    "power_on_source": "PowerConfig_PowerOnSource",
+    "power_wake_on_lan_boot": "PowerConfig_WakeOnLanBoot",
+    "pxe_boot_option_retry": "BootConfig_PxeBootOptionRetry",
+    "pxe_option_rom_policy": "CsmConfig_PxeOptionRomPolicy",
+    "quiet_boot_enabled": "BootConfig_QuietBootEnabled",
+    "sas_sata_driver": "OnboardDeviceConfig_SasSataDriver",
+    "sas_sata_enabled": "OnboardDeviceConfig_SasSataEnabled",
+    "sas_sata_option_rom_enabled":
+        "OnboardDeviceConfig_SasSataOptionRomEnabled",
+    "sata_controller_enabled": "SataConfig_SataControllerEnabled",
+    "sata_mode": "SataConfig_SataMode",
+    "secure_boot_control_enabled": "SecurityConfig_SecureBootControlEnabled",
+    "secure_boot_mode": "SecurityConfig_SecureBootMode",
+    "serial_port_io_config": "SerialPortConfig_IOConfig",
+    "single_root_io_virtualization_support_enabled":
+        "PciConfig_SingleRootIOVirtualizationSupportEnabled",
+    "storage_option_rom_policy": "CsmConfig_StorageOptionRomPolicy",
+    "tpm_hash_policy": "TpmConfig_HashPolicy",
+    "tpm_state_enabled": "TpmConfig_TpmStateEnabled",
+    "usb_legacy_support": "UsbConfig_LegacySupport",
+    "usb_port_disable": "UsbConfig_PortDisable",
+    "usb_xhci_mode": "UsbConfig_XHCIMode",
+    "video_option_rom_policy": "CsmConfig_VideoOptionRomPolicy"
+}
+
 
 class ELCMInvalidResponse(scci.SCCIError):
     def __init__(self, message):
@@ -81,6 +138,11 @@ class SecureBootConfigNotFound(scci.SCCIError):
 class ELCMValueError(scci.SCCIError):
     def __init__(self, message):
         super(ELCMValueError, self).__init__(message)
+
+
+class BiosConfigNotFound(scci.SCCIError):
+    def __init__(self, message):
+        super(BiosConfigNotFound, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -962,3 +1024,56 @@ def delete_raid_configuration(irmc_info):
 
     # Attempt to delete raid adapter
     elcm_profile_delete(irmc_info, PROFILE_RAID_CONFIG)
+
+
+def set_bios_configuration(irmc_info, settings):
+    """Set BIOS configurations on the server.
+
+    :param irmc_info: node info
+    :param settings: Dictionary containing the BIOS configuration.
+    :raise: BiosConfigNotFound, if there is wrong settings for bios
+    configuration.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+    configs = {}
+    for setting_param in settings:
+        setting_name = setting_param.get("name")
+        setting_value = setting_param.get("value")
+        try:
+            type_config, config = BIOS_CONFIGURATION_DICTIONARY[
+                setting_name].split("_")
+            if type_config in configs.keys():
+                configs[type_config][config] = setting_value
+            else:
+                configs.update({type_config: {config: setting_value}})
+        except KeyError:
+            raise BiosConfigNotFound("Invalid BIOS setting: %s"
+                                     % setting_param)
+    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def get_bios_settings(irmc_info):
+    """Get the current BIOS settings on the server
+
+    :param irmc_info: node info.
+    :returns: a list of dictionary BIOS settings
+    """
+
+    bios_config = backup_bios_config(irmc_info)['bios_config']
+    bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
+    settings = []
+    for setting_param in BIOS_CONFIGURATION_DICTIONARY.keys():
+        type_config, config = BIOS_CONFIGURATION_DICTIONARY[
+            setting_param].split("_")
+        if config in bios_config_data.get(type_config, {}):
+            value = bios_config_data[type_config][config]
+            settings.append({'name': setting_param, 'value': value})
+    return settings
