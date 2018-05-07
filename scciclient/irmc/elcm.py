@@ -713,3 +713,28 @@ def set_secure_boot_mode(irmc_info, enable):
         }
     }
     restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def set_bios_configuration(irmc_info, settings):
+    """Set BIOS configurations on the server.
+
+    :param irmc_info: node info
+    :param bios_settings: Dictionary containing the BIOS configuration.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+    configs = {}
+    for setting in settings['settings']:
+        configs.update({
+            setting['name'].split("/")[0]: {
+                setting['name'].split("/")[1]: setting.get('value', None)
+            }
+        })
+    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)

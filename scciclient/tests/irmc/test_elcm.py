@@ -1025,3 +1025,34 @@ class ELCMTestCase(testtools.TestCase):
         }
         restore_bios_config_mock.assert_called_once_with(
             irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'restore_bios_config')
+    def test_set_bios_configuration(self, restore_bios_config_mock):
+        settings = {
+            "settings": [{
+                "name": "PciConfig/SingleRootIOVirtualizationSupportEnabled",
+                "value": False
+            }, {
+                "name": "BootConfig/PxeBootOptionRetry",
+                "value": True
+            }]
+        }
+
+        bios_config_data = {
+            "Server": {
+                "SystemConfig": {
+                    "BiosConfig": {
+                        "BootConfig": {
+                            "PxeBootOptionRetry": True
+                        },
+                        "PciConfig": {
+                            "SingleRootIOVirtualizationSupportEnabled": False
+                        }
+                    }
+                }
+            }
+        }
+        elcm.set_bios_configuration(irmc_info=self.irmc_info,
+                                    settings=settings)
+        restore_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, bios_config=bios_config_data)
