@@ -1025,3 +1025,61 @@ class ELCMTestCase(testtools.TestCase):
         }
         restore_bios_config_mock.assert_called_once_with(
             irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'restore_bios_config')
+    def test_set_bios_configuration(self, restore_bios_config_mock):
+        settings = [{
+            "name": "BootConfig/PxeBootOptionRetry",
+            "value": True
+        }, {
+            "name": "PowerConfig/WakeOnLanBoot",
+            "value": "BootSequence"
+        }]
+        bios_config_data = {
+            "Server": {
+                "SystemConfig": {
+                    "BiosConfig": {
+                        "BootConfig": {
+                            "PxeBootOptionRetry": True
+                        },
+                        "PowerConfig": {
+                            "WakeOnLanBoot": "BootSequence"
+                        }
+                    }
+                }
+            }
+        }
+        elcm.set_bios_configuration(irmc_info=self.irmc_info,
+                                    settings=settings)
+        restore_bios_config_mock.assert_called_once_with(
+            irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'backup_bios_config')
+    def test_get_bios_settings(self, backup_bios_config_mock):
+        backup_bios_config_mock.return_value = {
+            'bios_config': {
+                "Server": {
+                    "SystemConfig": {
+                        "BiosConfig": {
+                            "BootConfig": {
+                                "PxeBootOptionRetry": True
+                            },
+                            "PowerConfig": {
+                                "WakeOnLanBoot": "BootSequence"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        result = elcm.get_bios_settings(irmc_info=self.irmc_info)
+        expect_settings = [{
+            "name": "BootConfig/PxeBootOptionRetry",
+            "value": True
+        }, {
+            "name": "PowerConfig/WakeOnLanBoot",
+            "value": "BootSequence"
+        }]
+        self.assertItemsEqual(expect_settings, result)
+        backup_bios_config_mock.assert_called_once_with(
+            self.irmc_info)
