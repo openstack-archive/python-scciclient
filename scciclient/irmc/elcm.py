@@ -52,6 +52,27 @@ PROFILE_SET_TIMEOUT = 300  # 300 secs
 BIOS_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 RAID_CONFIG_SESSION_TIMEOUT = 30 * 60  # 30 mins
 
+BIOS_CONFIGURATION_DICTIONARY = {
+    "boot_option_filter": "CsmConfig_BootOptionFilter",
+    "check_controllers_health_status_enabled":
+        "BootConfig_CheckControllersHealthStatusEnabled",
+    "cpu_active_processor_cores": "CpuConfig_ActiveProcessorCores",
+    "cpu_adjacent_cache_line_prefetch_enabled":
+        "CpuConfig_AdjacentCacheLinePrefetchEnabled",
+    "cpu_vt_enabled": "CpuConfig_VtEnabled",
+    "flash_write_enabled": "SecurityConfig_FlashWriteEnabled",
+    "hyper_threading_enabled": "CpuConfig_HyperThreadingEnabled",
+    "keep_void_boot_options_enabled": "BootConfig_KeepVoidBootOptionsEnabled",
+    "launch_csm_enabled": "CsmConfig_LaunchCsmEnabled",
+    "os_energy_performance_override_enabled":
+        "CpuConfig_OsEnergyPerformanceOverrideEnabled",
+    "pci_aspm_support": "PciConfig_ASPMSupport",
+    "pci_above_4g_decoding_enabled": "PciConfig_Above4GDecodingEnabled",
+    "power_on_source": "PowerConfig_PowerOnSource",
+    "single_root_io_virtualization_support_enabled":
+        "PciConfig_SingleRootIOVirtualizationSupportEnabled",
+}
+
 
 class ELCMInvalidResponse(scci.SCCIError):
     def __init__(self, message):
@@ -81,6 +102,11 @@ class SecureBootConfigNotFound(scci.SCCIError):
 class ELCMValueError(scci.SCCIError):
     def __init__(self, message):
         super(ELCMValueError, self).__init__(message)
+
+
+class BiosConfigNotFound(scci.SCCIError):
+    def __init__(self, message):
+        super(BiosConfigNotFound, self).__init__(message)
 
 
 def _parse_elcm_response_body_as_json(response):
@@ -962,3 +988,56 @@ def delete_raid_configuration(irmc_info):
 
     # Attempt to delete raid adapter
     elcm_profile_delete(irmc_info, PROFILE_RAID_CONFIG)
+
+
+def set_bios_configuration(irmc_info, settings):
+    """Set BIOS configurations on the server.
+
+    :param irmc_info: node info
+    :param settings: Dictionary containing the BIOS configuration.
+    :raise: BiosConfigNotFound, if there is wrong settings for bios
+    configuration.
+    """
+
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+    configs = {}
+    for setting_param in settings:
+        setting_name = setting_param.get("name")
+        setting_value = setting_param.get("value")
+        try:
+            type_config, config = BIOS_CONFIGURATION_DICTIONARY[
+                setting_name].split("_")
+            if type_config in configs.keys():
+                configs[type_config][config] = setting_value
+            else:
+                configs.update({type_config: {config: setting_value}})
+        except KeyError:
+            raise BiosConfigNotFound("Invalid BIOS setting: %s"
+                                     % setting_param)
+    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
+    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+
+
+def get_bios_settings(irmc_info):
+    """Get the current BIOS settings on the server
+
+    :param irmc_info: node info.
+    :returns: a list of dictionary BIOS settings
+    """
+
+    bios_config = backup_bios_config(irmc_info)['bios_config']
+    bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
+    settings = []
+    for setting_param in BIOS_CONFIGURATION_DICTIONARY.keys():
+        type_config, config = BIOS_CONFIGURATION_DICTIONARY[
+            setting_param].split("_")
+        if config in bios_config_data.get(type_config, {}):
+            value = bios_config_data[type_config][config]
+            settings.append({'name': setting_param, 'value': value})
+    return settings
