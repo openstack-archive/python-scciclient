@@ -18,8 +18,8 @@ import itertools
 from pyghmi import exceptions as ipmi_exception
 from pyghmi.ipmi import command as ipmi_command
 
-# F1 1A - Get the number of GPU devices on PCI and the number of CPUs with FPGA
-GET_GPU = '0x2E 0xF1 0x80 0x28 0x00 0x1A %s 0x00'
+# F1 1A - Get the number of specific PCI devices on baremetal
+GET_PCI = '0x2E 0xF1 0x80 0x28 0x00 0x1A %s 0x00'
 
 # F5 81 - GET TPM STATUS
 GET_TPM_STATUS = '0x2E 0xF5 0x80 0x28 0x00 0x81 0xC0'
@@ -118,29 +118,27 @@ def _pci_seq(ipmicmd):
     """
     for i in range(1, 0xff + 1):
         try:
-            res = _send_raw_command(ipmicmd, GET_GPU % hex(i))
+            res = _send_raw_command(ipmicmd, GET_PCI % hex(i))
             yield i, res
         except ipmi_exception.IpmiException as e:
             raise IPMIFailure(
                 "IPMI operation '%(operation)s' failed: %(error)s" %
-                {'operation': "GET GPU device quantity", 'error': e})
+                {'operation': "GET PCI device quantity", 'error': e})
 
 
-def get_gpu(d_info, pci_device_ids):
-    """Get quantity of GPU devices on PCI and quantity of CPUs with FPGA.
+def get_pci_device(d_info, pci_device_ids):
+    """Get quantity of PCI devices.
 
-    Get quantity of GPU devices on PCI and quantity of CPUs with FPGA of the
-    node.
+    Get quantity of PCI devices of the node.
 
     :param d_info: the list of ipmitool parameters for accessing a node.
     :param pci_device_ids: the list contains pairs of <vendorID>/<deviceID> for
-    GPU on PCI.
-    :returns: a tuple of the number of GPU devices on PCI and the number of
-    CPUs with FPGA.
+    PCI devices.
+    :returns: the number of PCI devices.
     """
 
     # note:
-    # Get quantity of GPU devices on PCI and quantity of CPUs with FPGA:
+    # Get quantity of PCI devices:
     # ipmi cmd '0xF1'
     #
     # $ ipmitool raw 0x2E 0xF1 0x80 0x28 0x00 0x1A 0x01 0x00
@@ -167,6 +165,6 @@ def get_gpu(d_info, pci_device_ids):
             out[7], out[6], out[9], out[8])
         return accm + 1 if pci_id in pci_device_ids else accm
 
-    gpu_count = functools.reduce(_pci_count, response, 0)
+    device_count = functools.reduce(_pci_count, response, 0)
 
-    return gpu_count
+    return device_count

@@ -704,7 +704,7 @@ class SCCITestCase(testtools.TestCase):
 
         self.assertEqual(expected, result)
 
-    @mock.patch.object(ipmi, 'get_gpu')
+    @mock.patch.object(ipmi, 'get_pci_device')
     @mock.patch.object(snmp, 'get_server_model')
     @mock.patch.object(snmp, 'get_irmc_firmware_version')
     @mock.patch.object(snmp, 'get_bios_firmware_version')
@@ -714,7 +714,7 @@ class SCCITestCase(testtools.TestCase):
                                          bios_mock,
                                          irmc_mock,
                                          server_mock,
-                                         gpu_mock):
+                                         pci_device_mock):
         capabilities_properties = {'trusted_boot', 'irmc_firmware_version',
                                    'rom_firmware_version', 'server_model',
                                    'pci_gpu_devices'}
@@ -726,7 +726,7 @@ class SCCITestCase(testtools.TestCase):
         bios_mock.return_value = 'V4.6.5.4 R1.15.0 for D3099-B1x'
         irmc_mock.return_value = 'iRMC S4-7.82F'
         server_mock.return_value = 'TX2540M1F5'
-        gpu_mock.return_value = 1
+        pci_device_mock.side_effect = [1]
 
         expected = {'irmc_firmware_version': 'iRMC S4-7.82F',
                     'pci_gpu_devices': 1,
@@ -745,10 +745,57 @@ class SCCITestCase(testtools.TestCase):
         bios_mock.assert_called_once_with(mock.ANY)
         irmc_mock.assert_called_once_with(mock.ANY)
         server_mock.assert_called_once_with(mock.ANY)
-        gpu_mock.assert_called_once_with(self.irmc_info,
-                                         gpu_ids)
+        pci_device_mock.assert_called_once_with(self.irmc_info, gpu_ids)
 
-    @mock.patch.object(ipmi, 'get_gpu')
+    @mock.patch.object(ipmi, 'get_pci_device')
+    @mock.patch.object(snmp, 'get_server_model')
+    @mock.patch.object(snmp, 'get_irmc_firmware_version')
+    @mock.patch.object(snmp, 'get_bios_firmware_version')
+    @mock.patch.object(ipmi, 'get_tpm_status')
+    def test_get_capabilities_properties_with_cpu_fpga(self,
+                                                       tpm_mock,
+                                                       bios_mock,
+                                                       irmc_mock,
+                                                       server_mock,
+                                                       pci_device_mock):
+        capabilities_properties = {'trusted_boot', 'irmc_firmware_version',
+                                   'rom_firmware_version', 'server_model',
+                                   'pci_gpu_devices', 'cpu_fpga'}
+        gpu_ids = ['0x1000/0x0079', '0x2100/0x0080']
+        cpu_fpgas = ['0x1000/0x0179', '0x2100/0x0180']
+        kwargs = {}
+        kwargs['sleep_flag'] = True
+
+        tpm_mock.return_value = False
+        bios_mock.return_value = 'V4.6.5.4 R1.15.0 for D3099-B1x'
+        irmc_mock.return_value = 'iRMC S4-7.82F'
+        server_mock.return_value = 'TX2540M1F5'
+        pci_device_mock.side_effect = [1, 1]
+
+        expected = {'irmc_firmware_version': 'iRMC S4-7.82F',
+                    'pci_gpu_devices': 1,
+                    'cpu_fpga': 1,
+                    'rom_firmware_version': 'V4.6.5.4 R1.15.0 for D3099-B1x',
+                    'server_model': 'TX2540M1F5',
+                    'trusted_boot': False}
+
+        result = scci.get_capabilities_properties(
+            self.irmc_info,
+            capabilities_properties,
+            gpu_ids,
+            cpu_fpgas,
+            **kwargs)
+
+        self.assertEqual(expected, result)
+        tpm_mock.assert_called_once_with(self.irmc_info)
+        bios_mock.assert_called_once_with(mock.ANY)
+        irmc_mock.assert_called_once_with(mock.ANY)
+        server_mock.assert_called_once_with(mock.ANY)
+        pci_device_mock.assert_has_calls([
+            mock.call(self.irmc_info, gpu_ids),
+            mock.call(self.irmc_info, cpu_fpgas)])
+
+    @mock.patch.object(ipmi, 'get_pci_device')
     @mock.patch.object(snmp, 'get_server_model')
     @mock.patch.object(snmp, 'get_irmc_firmware_version')
     @mock.patch.object(snmp, 'get_bios_firmware_version')
@@ -758,10 +805,11 @@ class SCCITestCase(testtools.TestCase):
                                                bios_mock,
                                                irmc_mock,
                                                server_mock,
-                                               gpu_mock):
+                                               pci_device_mock):
 
         capabilities_properties = {}
         gpu_ids = ['0x1000/0x0079', '0x2100/0x0080']
+        cpu_fpgas = ['0x1000/0x0179', '0x2100/0x0180']
         kwargs = {}
         kwargs['sleep_flag'] = True
 
@@ -769,7 +817,7 @@ class SCCITestCase(testtools.TestCase):
         bios_mock.return_value = 'V4.6.5.4 R1.15.0 for D3099-B1x'
         irmc_mock.return_value = 'iRMC S4-7.82F'
         server_mock.return_value = 'TX2540M1F5'
-        gpu_mock.return_value = 1
+        pci_device_mock.side_effect = [1, 1]
 
         expected = {}
 
@@ -777,6 +825,7 @@ class SCCITestCase(testtools.TestCase):
             self.irmc_info,
             capabilities_properties,
             gpu_ids,
+            cpu_fpgas,
             **kwargs)
 
         self.assertEqual(expected, result)
@@ -788,8 +837,9 @@ class SCCITestCase(testtools.TestCase):
                                                            ipmiraw_mock):
         capabilities_properties = {'trusted_boot', 'irmc_firmware_version',
                                    'rom_firmware_version', 'server_model',
-                                   'pci_gpu_devices'}
+                                   'pci_gpu_devices', 'cpu_fpga'}
         gpu_ids = ['0x1000/0x0079', '0x2100/0x0080']
+        cpu_fpgas = ['0x1000/0x0179', '0x2100/0x0180']
         kwargs = {}
         kwargs['sleep_flag'] = True
 
@@ -801,19 +851,21 @@ class SCCITestCase(testtools.TestCase):
                               self.irmc_info,
                               capabilities_properties,
                               gpu_ids,
+                              cpu_fpgas,
                               **kwargs)
         self.assertEqual('Capabilities inspection failed: SNMP operation \''
                          'GET BIOS FIRMWARE VERSION\' failed: error', str(e))
 
-    @mock.patch.object(ipmi, 'get_gpu')
+    @mock.patch.object(ipmi, 'get_pci_device')
     @mock.patch.object(snmp.SNMPClient, 'get')
     def test_get_capabilities_properties_scci_client_error_ipmi(self,
                                                                 snmp_mock,
                                                                 ipmi_mock):
         capabilities_properties = {'trusted_boot', 'irmc_firmware_version',
                                    'rom_firmware_version', 'server_model',
-                                   'pci_gpu_devices'}
+                                   'pci_gpu_devices', 'cpu_fpga'}
         gpu_ids = ['0x1000/0x0079', '0x2100/0x0080']
+        cpu_fpgas = ['0x1000/0x0179', '0x2100/0x0180']
         kwargs = {}
         kwargs['sleep_flag'] = True
 
@@ -825,6 +877,7 @@ class SCCITestCase(testtools.TestCase):
                               self.irmc_info,
                               capabilities_properties,
                               gpu_ids,
+                              cpu_fpgas,
                               **kwargs)
         self.assertEqual('Capabilities inspection failed: IPMI error', str(e))
 
