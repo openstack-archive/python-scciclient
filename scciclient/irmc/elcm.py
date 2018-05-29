@@ -780,8 +780,6 @@ def _update_raid_input_data(target_raid_config, raid_input):
                                                         'execute'})
     array_info = raid_input['Server']['HWConfigurationIrmc']['Adapters'][
         'RAIDAdapter'][0]
-    # Set max value for BGI
-    array_info['BGIRate'] = 100
     array_info['LogicalDrives'] = {'LogicalDrive': []}
     array_info['Arrays'] = {'Array': []}
 
@@ -796,7 +794,7 @@ def _update_raid_input_data(target_raid_config, raid_input):
             array_info['LogicalDrives']['LogicalDrive'].append(
                 {'@Action': 'Create',
                  'RaidLevel': logical_disk['raid_level'],
-                 'InitMode': 'fast'})
+                 'InitMode': 'slow'})
             array_info['LogicalDrives']['LogicalDrive'][i].update({
                 "@Number": i})
 
@@ -818,7 +816,7 @@ def _update_raid_input_data(target_raid_config, raid_input):
                     "ArrayRef": [
                     ]
                 },
-                "InitMode": "fast"
+                "InitMode": "slow"
             }
 
             array_info['Arrays']['Array'].append(arrays)
@@ -919,7 +917,7 @@ def create_raid_configuration(irmc_info, target_raid_config):
     if logical_drives is not None:
         # Delete exist logical drives in server.
         # NOTE(trungnv): Wait session complete and raise error if
-        # delete raid config during BGI(BackGround Initialize) in-progress
+        # delete raid config during FGI(Foreground Initialization) in-progress
         # in previous mechanism.
         delete_raid_configuration(irmc_info)
         # Updating raid adapter profile after deleted profile.

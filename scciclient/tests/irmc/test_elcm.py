@@ -1130,14 +1130,13 @@ class ELCMTestCase(testtools.TestCase):
                                 'Arrays': {
                                     'Array': []
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '1',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1190,14 +1189,13 @@ class ELCMTestCase(testtools.TestCase):
                                 'Arrays': {
                                     'Array': []
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '0',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1207,7 +1205,7 @@ class ELCMTestCase(testtools.TestCase):
                                             '@Number': 1,
                                             '@Action': 'Create',
                                             'RaidLevel': '1',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1289,14 +1287,13 @@ class ELCMTestCase(testtools.TestCase):
                                         }
                                     ]
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '1',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1399,14 +1396,13 @@ class ELCMTestCase(testtools.TestCase):
                                         },
                                     ]
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '0',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1423,7 +1419,7 @@ class ELCMTestCase(testtools.TestCase):
                                             '@Number': 1,
                                             '@Action': 'Create',
                                             'RaidLevel': '1',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1541,14 +1537,13 @@ class ELCMTestCase(testtools.TestCase):
                                 'Arrays': {
                                     'Array': []
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '1',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1612,14 +1607,13 @@ class ELCMTestCase(testtools.TestCase):
                                 'Arrays': {
                                     'Array': []
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '0',
-                                            'InitMode': 'fast'
+                                            'InitMode': 'slow'
                                         }
                                     ]
                                 }
@@ -1690,14 +1684,13 @@ class ELCMTestCase(testtools.TestCase):
                                         },
                                     ]
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '0',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1708,7 +1701,7 @@ class ELCMTestCase(testtools.TestCase):
                                             '@Number': 1,
                                             '@Action': 'Create',
                                             'RaidLevel': '1',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1786,14 +1779,13 @@ class ELCMTestCase(testtools.TestCase):
                                 'Arrays': {
                                     'Array': []
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '10',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1857,14 +1849,13 @@ class ELCMTestCase(testtools.TestCase):
                                 'Arrays': {
                                     'Array': []
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'Create',
                                             'RaidLevel': '50',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
@@ -1940,14 +1931,13 @@ class ELCMTestCase(testtools.TestCase):
                                         }
                                     ]
                                 },
-                                'BGIRate': 100,
                                 'LogicalDrives': {
                                     'LogicalDrive': [
                                         {
                                             '@Number': 0,
                                             '@Action': 'None',
                                             'RaidLevel': '0',
-                                            'InitMode': 'fast',
+                                            'InitMode': 'slow',
                                             'Size': {
                                                 '@Unit': 'GB',
                                                 '#text': 100
