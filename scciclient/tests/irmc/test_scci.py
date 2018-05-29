@@ -881,22 +881,22 @@ class SCCITestCase(testtools.TestCase):
                               **kwargs)
         self.assertEqual('Capabilities inspection failed: IPMI error', str(e))
 
-    def test_fail_get_raid_bgi_status(self):
+    def test_fail_get_raid_fgi_status(self):
         report_fake = self.report_ok_xml
         report_fake.find("./Software/ServerView/ServerViewRaid").clear()
         self.assertRaises(scci.SCCIInvalidInputError,
-                          scci.get_raid_bgi_status, report=report_fake)
+                          scci.get_raid_fgi_status, report=report_fake)
 
-    def test_fail_get_raid_bgi_status_1(self):
+    def test_fail_get_raid_fgi_status_1(self):
         report_fake = self.report_ok_xml
         report_fake.find("./Software/ServerView/ServerViewRaid/amEMSV"
                          "/System/Adapter").clear()
-        self.assertRaises(scci.SCCIInvalidInputError,
-                          scci.get_raid_bgi_status, report=report_fake)
+        self.assertRaises(scci.SCCIRAIDNotReady,
+                          scci.get_raid_fgi_status, report=report_fake)
 
-    def test_get_raid_bgi_status_ok(self):
+    def test_get_raid_fgi_status_ok(self):
 
-        # Fake activity status of BGI in xml report
+        # Fake activity status of FGI in xml report
         url = "./Software/ServerView/ServerViewRaid/amEMSV/System/Adapter"
         report_fake = self.report_ok_xml
         report_input = report_fake.find(url)
@@ -909,6 +909,6 @@ class SCCITestCase(testtools.TestCase):
         report_input.find("./LogicalDrive").append(element_3)
         report_fake.find(url + "/LogicalDrive/Activity").text = 'Idle'
 
-        bgi_status_expect = {'0': 'Idle'}
-        result = scci.get_raid_bgi_status(report_fake)
-        self.assertEqual(result, bgi_status_expect)
+        fgi_status_expect = {'0': 'Idle'}
+        result = scci.get_raid_fgi_status(report_fake)
+        self.assertEqual(result, fgi_status_expect)

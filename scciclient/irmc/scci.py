@@ -58,6 +58,16 @@ class SCCIClientError(SCCIError):
         super(SCCIClientError, self).__init__(message)
 
 
+class SCCIRAIDNotReady(SCCIError):
+    """SCCIRAIDNotReady
+
+    This exception is used when a mechanism not applied
+    into a configuration on the iRMC yet
+    """
+    def __init__(self, message):
+        super(SCCIRAIDNotReady, self).__init__(message)
+
+
 """
 List of iRMC S4 supported SCCI commands
 
@@ -550,25 +560,26 @@ def get_capabilities_properties(d_info,
         raise SCCIClientError('Capabilities inspection failed: %s' % err)
 
 
-def get_raid_bgi_status(report):
-    """Gather bgi(background initialize) information of raid configuration
+def get_raid_fgi_status(report):
+    """Gather fgi(foreground initialization) information of raid configuration
 
-    This function returns a bgi status which contains activity status
+    This function returns a fgi status which contains activity status
     and its values from the report.
 
     :param report: SCCI report information
-    :returns: dict of bgi status of logical_drives, such as BGI(10%) or
-              Idle. e.g: {'0': 'Idle', '1': 'BGI(10%)'}
+    :returns: dict of fgi status of logical_drives, such as Initializing (10%)
+              or Idle. e.g: {'0': 'Idle', '1': 'Initializing (10%)'}
     :raises: SCCIInvalidInputError: fail report input.
+             SCCIRAIDNotReady: waiting for RAID configuration to complete.
     """
-    bgi_status = {}
+    fgi_status = {}
     raid_path = "./Software/ServerView/ServerViewRaid"
 
     if not report.find(raid_path):
         raise SCCIInvalidInputError(
             "ServerView RAID not available in Bare metal Server")
     if not report.find(raid_path + "/amEMSV/System/Adapter/LogicalDrive"):
-        raise SCCIInvalidInputError(
+        raise SCCIRAIDNotReady(
             "RAID configuration not configure in Bare metal Server yet")
 
     logical_drives = report.findall(raid_path +
@@ -576,6 +587,6 @@ def get_raid_bgi_status(report):
     for logical_drive_name in logical_drives:
         status = logical_drive_name.find("./Activity").text
         name = logical_drive_name.find("./LogDriveNumber").text
-        bgi_status.update({name: status})
+        fgi_status.update({name: status})
 
-    return bgi_status
+    return fgi_status
