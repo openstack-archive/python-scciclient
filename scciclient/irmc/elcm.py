@@ -17,6 +17,8 @@ eLCM functionality.
 """
 
 import collections
+import re
+import six
 import time
 
 from oslo_serialization import jsonutils
@@ -98,7 +100,6 @@ BIOS_CONFIGURATION_DICTIONARY = {
     "sata_mode": "SataConfig_SataMode",
     "secure_boot_control_enabled": "SecurityConfig_SecureBootControlEnabled",
     "secure_boot_mode": "SecurityConfig_SecureBootMode",
-    "serial_port_io_config": "SerialPortConfig_IOConfig",
     "single_root_io_virtualization_support_enabled":
         "PciConfig_SingleRootIOVirtualizationSupportEnabled",
     "storage_option_rom_policy": "CsmConfig_StorageOptionRomPolicy",
@@ -1035,18 +1036,27 @@ def set_bios_configuration(irmc_info, settings):
     :raise: BiosConfigNotFound, if there is wrong settings for bios
     configuration.
     """
+    bios_config = backup_bios_config(irmc_info)['bios_config']
+    bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
+    # NOTE(trungnv): Should remove other params which will
+    # re-setting into BIOS, thus will decrease performance of system.
+    # And have risks during setting BIOS.
+    for k, v in bios_config_data.items():
+        if not re.match('^@', k) and isinstance(v, dict):
+            bios_config_data.pop(k, None)
+            if not bios_config_data:
+                break
 
-    bios_config_data = {
-        'Server': {
-            'SystemConfig': {
-                'BiosConfig': {}
-            }
-        }
-    }
     configs = {}
     for setting_param in settings:
         setting_name = setting_param.get("name")
         setting_value = setting_param.get("value")
+        # Revert-conversion from a string of True/False to boolean.
+        # It will be raise failed if put "True" or "False" string value.
+        if setting_value == "True":
+            setting_value = True
+        elif setting_value == "False":
+            setting_value = False
         try:
             type_config, config = BIOS_CONFIGURATION_DICTIONARY[
                 setting_name].split("_")
@@ -1057,8 +1067,8 @@ def set_bios_configuration(irmc_info, settings):
         except KeyError:
             raise BiosConfigNotFound("Invalid BIOS setting: %s"
                                      % setting_param)
-    bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
-    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+    bios_config_data.update(configs)
+    restore_bios_config(irmc_info, bios_config)
 
 
 def get_bios_settings(irmc_info):
@@ -1071,10 +1081,12 @@ def get_bios_settings(irmc_info):
     bios_config = backup_bios_config(irmc_info)['bios_config']
     bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
     settings = []
+
+    # TODO(trungnv): Allow working with multi levels of BIOS dictionary.
     for setting_param in BIOS_CONFIGURATION_DICTIONARY.keys():
         type_config, config = BIOS_CONFIGURATION_DICTIONARY[
             setting_param].split("_")
         if config in bios_config_data.get(type_config, {}):
-            value = bios_config_data[type_config][config]
+            value = six.text_type(bios_config_data[type_config][config])
             settings.append({'name': setting_param, 'value': value})
     return settings
