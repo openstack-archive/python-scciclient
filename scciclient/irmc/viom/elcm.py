@@ -91,7 +91,8 @@ class ELCMVIOMClient(object):
     def set_profile(self, adapter_config):
         _adapter_config = dict(adapter_config)
         _adapter_config.update({'@Processing': 'execute'})
-        req = {'Server': {'AdapterConfigIrmc': _adapter_config}}
+        req = {'Server': {'AdapterConfigIrmc': _adapter_config,
+                          '@Version': '1.01'}}
         resp = elcm.elcm_profile_set(self.irmc_info, req)
         self._wait_session(resp['Session']['Id'])
 
@@ -147,7 +148,8 @@ class VIOMTable(VIOMElement):
         VIOMAttribute('boot_mode', 'BootMode'),
         VIOMAttribute('init_boot', 'InitBoot'),
         VIOMAttribute('processing', '@Processing'),
-        VIOMAttribute('mode', 'Mode')
+        VIOMAttribute('mode', 'Mode'),
+        VIOMAttribute('version', '@Version', '1.00'),
     ]
 
     def __init__(self, **kwargs):

@@ -51,6 +51,7 @@ class VIOMConfigurationTestCase(testtools.TestCase):
             },
             'InitBoot': reboot,
             'Mode': 'delete',
+            '@Version': '1.00',
         }
         mock_set.assert_called_once_with(expected_json)
 
@@ -75,7 +76,8 @@ class VIOMConfigurationTestCase(testtools.TestCase):
             },
             'Slots': {
                 'Slot': [slot_json]
-            }
+            },
+            '@Version': '1.00',
         }
 
     @staticmethod
@@ -86,7 +88,8 @@ class VIOMConfigurationTestCase(testtools.TestCase):
             },
             'Slots': {
                 'Slot': [slot_json]
-            }
+            },
+            '@Version': '1.00',
         }
 
     @staticmethod

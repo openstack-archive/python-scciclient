@@ -183,7 +183,8 @@ class ELCMVIOMClientTestCase(testtools.TestCase):
                 {'AdapterConfigIrmc':
                     {'ViomManage': {'Manage': True},
                      'InitBoot': True,
-                     '@Processing': 'execute'}}})
+                     '@Processing': 'execute'},
+                 '@Version': '1.01'}})
 
     @mock.patch.object(elcm, 'elcm_profile_create')
     @mock.patch.object(viom_elcm.ELCMVIOMClient, '_wait_session',
@@ -521,12 +522,13 @@ class VIOMTableTestCase(testtools.TestCase):
                     VIOMTableTestCase._sample_slot_json()
                 ]
             },
+            '@Version': '1.00',
         }
         self.assertEqual(expected_json, root.get_json())
 
     def test_root_empty(self):
         root = viom_elcm.VIOMTable()
-        self.assertEqual({}, root.get_json())
+        self.assertEqual({'@Version': '1.00'}, root.get_json())
 
     def test_root_detail(self):
         root = viom_elcm.VIOMTable(
@@ -555,6 +557,7 @@ class VIOMTableTestCase(testtools.TestCase):
                     VIOMTableTestCase._sample_slot_json()
                 ]
             },
+            '@Version': '1.00',
         }
         self.assertEqual(expected_json, root.get_json())
 
