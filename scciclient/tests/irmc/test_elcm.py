@@ -248,6 +248,51 @@ class ELCMTestCase(testtools.TestCase):
 
         self.assertEqual('UNAUTHORIZED', str(e))
 
+    def test_elcm_profile_get_versions_failed(self):
+        self.requests_mock.register_uri(
+            'GET',
+            self._create_server_url(elcm.URL_PATH_PROFILE_MGMT) + 'version',
+            status_code=503)
+
+        self.assertRaises(scci.SCCIClientError,
+                          elcm.elcm_profile_get_versions,
+                          self.irmc_info)
+
+    def test_elcm_profile_get_versions_ok(self):
+        self.requests_mock.register_uri(
+            'GET',
+            self._create_server_url(elcm.URL_PATH_PROFILE_MGMT) + 'version',
+            text=(self.RESPONSE_TEMPLATE % {
+                'json_text':
+                    '"Server":{'
+                    '  "@Version": "1.01",'
+                    '  "AdapterConfigIrmc": {'
+                    '    "@Version": "1.00"'
+                    '   },'
+                    '  "SystemConfig": {'
+                    '    "BiosConfig": {'
+                    '      "@Version": "1.02"'
+                    '    }'
+                    '  }'
+                    '}'}))
+
+        result = elcm.elcm_profile_get_versions(self.irmc_info)
+
+        expected = {
+            "Server": {
+                "@Version": "1.01",
+                "AdapterConfigIrmc": {
+                    "@Version": "1.00"
+                },
+                "SystemConfig": {
+                    "BiosConfig": {
+                        "@Version": "1.02"
+                    }
+                }
+            }
+        }
+        self.assertEqual(expected, result)
+
     def test_elcm_profile_get_not_found(self):
         profile_name = elcm.PROFILE_BIOS_CONFIG
         self.requests_mock.register_uri(
@@ -2299,14 +2344,30 @@ class ELCMTestCase(testtools.TestCase):
             self.irmc_info, elcm.PROFILE_RAID_CONFIG)
 
     @mock.patch.object(elcm, 'restore_bios_config')
-    def test_set_bios_configuration(self, restore_bios_config_mock):
+    @mock.patch.object(elcm, 'elcm_profile_get_versions')
+    def test_set_bios_configuration_without_versions(self,
+                                                     get_versions_mock,
+                                                     restore_bios_config_mock):
         settings = [{
             "name": "single_root_io_virtualization_support_enabled",
-            "value": True
+            "value": "True"
         }, {
             "name": "hyper_threading_enabled",
-            "value": True
+            "value": "True"
         }]
+
+        get_versions_mock.return_value = {
+            "Server": {
+                "AdapterConfigIrmc": {
+                    "@Version": "1.00"
+                },
+                "SystemConfig": {
+                    "BiosConfig": {
+                    }
+                }
+            }
+        }
+
         bios_config_data = {
             'Server': {
                 'SystemConfig': {
@@ -2322,20 +2383,129 @@ class ELCMTestCase(testtools.TestCase):
             }
         }
         elcm.set_bios_configuration(self.irmc_info, settings)
-        restore_bios_config_mock.assert_called_once_with(
-            irmc_info=self.irmc_info, bios_config=bios_config_data)
+        restore_bios_config_mock.assert_called_once_with(self.irmc_info,
+                                                         bios_config_data)
 
-    def test_set_bios_configuration_not_found(self):
+    @mock.patch.object(elcm, 'restore_bios_config')
+    @mock.patch.object(elcm, 'elcm_profile_get_versions')
+    def test_set_bios_configuration_with_versions(self,
+                                                  get_versions_mock,
+                                                  restore_bios_config_mock):
+        settings = [{
+            "name": "single_root_io_virtualization_support_enabled",
+            "value": "True"
+        }, {
+            "name": "hyper_threading_enabled",
+            "value": "True"
+        }]
+
+        get_versions_mock.return_value = {
+            "Server": {
+                "@Version": "1.01",
+                "AdapterConfigIrmc": {
+                    "@Version": "1.00"
+                },
+                "SystemConfig": {
+                    "BiosConfig": {
+                        "@Version": "1.02"
+                    }
+                }
+            }
+        }
+
+        bios_config = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'PciConfig': {
+                            'SingleRootIOVirtualizationSupportEnabled': True
+                        },
+                        'CpuConfig': {
+                            'HyperThreadingEnabled': True,
+                        },
+                        "@Version": "1.02"
+                    }
+                },
+                "@Version": "1.01"
+            }
+        }
+        elcm.set_bios_configuration(self.irmc_info, settings)
+        restore_bios_config_mock.assert_called_once_with(self.irmc_info,
+                                                         bios_config)
+
+    @mock.patch.object(elcm, 'elcm_profile_get_versions')
+    def test_set_bios_configuration_not_found(self,
+                                              get_versions_mock):
+        settings = [{
+            "name": "single_root_io_virtualization_support_enabled",
+            "value": "True"
+        }, {
+            "name": "setting1",
+            "value": "True"
+        }]
+
+        get_versions_mock.return_value = {
+            "Server": {
+                "@Version": "1.01",
+                "AdapterConfigIrmc": {
+                    "@Version": "1.00"
+                },
+                "SystemConfig": {
+                    "BiosConfig": {
+                        "@Version": "1.02"
+                    }
+                }
+            }
+        }
+
+        self.assertRaises(elcm.BiosConfigNotFound, elcm.set_bios_configuration,
+                          self.irmc_info, settings)
+
+    @mock.patch.object(elcm, 'restore_bios_config')
+    @mock.patch.object(elcm, 'elcm_profile_get_versions')
+    def test_set_bios_configuration_with_boolean_input(
+            self, get_versions_mock, restore_bios_config_mock):
         settings = [{
             "name": "single_root_io_virtualization_support_enabled",
             "value": True
         }, {
-            "name": "setting1",
-            "value": True
+            "name": "hyper_threading_enabled",
+            "value": False
         }]
 
-        self.assertRaises(elcm.BiosConfigNotFound, elcm.set_bios_configuration,
-                          self.irmc_info, settings)
+        get_versions_mock.return_value = {
+            "Server": {
+                "@Version": "1.01",
+                "AdapterConfigIrmc": {
+                    "@Version": "1.00"
+                },
+                "SystemConfig": {
+                    "BiosConfig": {
+                        "@Version": "1.02"
+                    }
+                }
+            }
+        }
+
+        bios_config = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        'PciConfig': {
+                            'SingleRootIOVirtualizationSupportEnabled': True
+                        },
+                        'CpuConfig': {
+                            'HyperThreadingEnabled': False,
+                        },
+                        "@Version": "1.02"
+                    }
+                },
+                "@Version": "1.01"
+            }
+        }
+        elcm.set_bios_configuration(self.irmc_info, settings)
+        restore_bios_config_mock.assert_called_once_with(self.irmc_info,
+                                                         bios_config)
 
     @mock.patch.object(elcm, 'backup_bios_config')
     def test_get_bios_settings(self, backup_bios_config_mock):
@@ -2359,10 +2529,10 @@ class ELCMTestCase(testtools.TestCase):
         result = elcm.get_bios_settings(self.irmc_info)
         expect_settings = [{
             "name": "single_root_io_virtualization_support_enabled",
-            "value": True
+            "value": "True"
         }, {
             "name": "hyper_threading_enabled",
-            "value": True
+            "value": "True"
         }]
         self.assertItemsEqual(expect_settings, result)
         backup_bios_config_mock.assert_called_once_with(
