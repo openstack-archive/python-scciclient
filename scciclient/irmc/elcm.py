@@ -17,6 +17,7 @@ eLCM functionality.
 """
 
 import collections
+import six
 import time
 
 from oslo_serialization import jsonutils
@@ -98,7 +99,6 @@ BIOS_CONFIGURATION_DICTIONARY = {
     "sata_mode": "SataConfig_SataMode",
     "secure_boot_control_enabled": "SecurityConfig_SecureBootControlEnabled",
     "secure_boot_mode": "SecurityConfig_SecureBootMode",
-    "serial_port_io_config": "SerialPortConfig_IOConfig",
     "single_root_io_virtualization_support_enabled":
         "PciConfig_SingleRootIOVirtualizationSupportEnabled",
     "storage_option_rom_policy": "CsmConfig_StorageOptionRomPolicy",
@@ -241,6 +241,44 @@ def elcm_request(irmc_info, method, path, **kwargs):
         raise scci.SCCIClientError('UNAUTHORIZED')
 
     return r
+
+
+def elcm_profile_get_versions(irmc_info):
+    """send an eLCM request to get profile versions
+
+    :param irmc_info: node info
+    :returns: dict object of profiles if succeed
+        {
+            "Server":{
+                "@Version": "1.01",
+                "AdapterConfigIrmc":{
+                    "@Version": "1.00"
+                },
+                "HWConfigurationIrmc":{
+                    "@Version": "1.00"
+                },
+                "SystemConfig":{
+                    "IrmcConfig":{
+                        "@Version": "1.02"
+                    },
+                    "BiosConfig":{
+                        "@Version": "1.02"
+                    }
+                }
+            }
+        }
+    :raises: SCCIClientError if SCCI failed
+    """
+    # Send GET request to the server
+    resp = elcm_request(irmc_info,
+                        method='GET',
+                        path=URL_PATH_PROFILE_MGMT + 'version')
+
+    if resp.status_code == 200:
+        return _parse_elcm_response_body_as_json(resp)
+    else:
+        raise scci.SCCIClientError(('Failed to get profile versions with '
+                                    'error code %s' % resp.status_code))
 
 
 def elcm_profile_list(irmc_info):
@@ -1043,10 +1081,29 @@ def set_bios_configuration(irmc_info, settings):
             }
         }
     }
+
+    versions = elcm_profile_get_versions(irmc_info)
+    server_version = versions['Server'].get('@Version')
+    bios_version = \
+        versions['Server']['SystemConfig']['BiosConfig'].get('@Version')
+
+    if server_version:
+        bios_config_data['Server']['@Version'] = server_version
+    if bios_version:
+        bios_config_data['Server']['SystemConfig']['BiosConfig']['@Version'] = \
+            bios_version
+
     configs = {}
     for setting_param in settings:
         setting_name = setting_param.get("name")
         setting_value = setting_param.get("value")
+        # Revert-conversion from a string of True/False to boolean.
+        # It will be raise failed if put "True" or "False" string value.
+        if isinstance(setting_value, six.string_types):
+            if setting_value.lower() == "true":
+                setting_value = True
+            elif setting_value.lower() == "false":
+                setting_value = False
         try:
             type_config, config = BIOS_CONFIGURATION_DICTIONARY[
                 setting_name].split("_")
@@ -1058,7 +1115,7 @@ def set_bios_configuration(irmc_info, settings):
             raise BiosConfigNotFound("Invalid BIOS setting: %s"
                                      % setting_param)
     bios_config_data['Server']['SystemConfig']['BiosConfig'].update(configs)
-    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+    restore_bios_config(irmc_info, bios_config_data)
 
 
 def get_bios_settings(irmc_info):
@@ -1071,10 +1128,12 @@ def get_bios_settings(irmc_info):
     bios_config = backup_bios_config(irmc_info)['bios_config']
     bios_config_data = bios_config['Server']['SystemConfig']['BiosConfig']
     settings = []
-    for setting_param in BIOS_CONFIGURATION_DICTIONARY.keys():
+
+    # TODO(trungnv): Allow working with multi levels of BIOS dictionary.
+    for setting_param in BIOS_CONFIGURATION_DICTIONARY:
         type_config, config = BIOS_CONFIGURATION_DICTIONARY[
             setting_param].split("_")
         if config in bios_config_data.get(type_config, {}):
-            value = bios_config_data[type_config][config]
+            value = six.text_type(bios_config_data[type_config][config])
             settings.append({'name': setting_param, 'value': value})
     return settings
