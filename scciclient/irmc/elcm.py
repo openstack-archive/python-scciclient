@@ -825,19 +825,11 @@ def set_secure_boot_mode(irmc_info, enable):
     :param enable: True, if secure boot needs to be
                    enabled for next boot, else False.
     """
-
-    bios_config_data = {
-        'Server': {
-            'SystemConfig': {
-                'BiosConfig': {
-                    'SecurityConfig': {
-                        'SecureBootControlEnabled': enable
-                    }
-                }
-            }
-        }
-    }
-    restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
+    settings = [{
+        'name': 'secure_boot_control_enabled',
+        'value': enable
+    }]
+    set_bios_configuration(irmc_info, settings)
 
 
 def _update_raid_input_data(target_raid_config, raid_input):
