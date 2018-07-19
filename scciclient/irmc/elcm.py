@@ -828,8 +828,10 @@ def set_secure_boot_mode(irmc_info, enable):
 
     bios_config_data = {
         'Server': {
+            '@Version': '1.01',
             'SystemConfig': {
                 'BiosConfig': {
+                    '@Version': '1.01',
                     'SecurityConfig': {
                         'SecureBootControlEnabled': enable
                     }

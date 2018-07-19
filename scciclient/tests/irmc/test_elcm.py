@@ -1119,8 +1119,10 @@ class ELCMTestCase(testtools.TestCase):
         elcm.set_secure_boot_mode(irmc_info=self.irmc_info, enable=True)
         bios_config_data = {
             'Server': {
+                '@Version': '1.01',
                 'SystemConfig': {
                     'BiosConfig': {
+                        '@Version': '1.01',
                         'SecurityConfig': {
                             'SecureBootControlEnabled': True
                         }
@@ -1136,8 +1138,10 @@ class ELCMTestCase(testtools.TestCase):
         elcm.set_secure_boot_mode(irmc_info=self.irmc_info, enable=False)
         bios_config_data = {
             'Server': {
+                '@Version': '1.01',
                 'SystemConfig': {
                     'BiosConfig': {
+                        '@Version': '1.01',
                         'SecurityConfig': {
                             'SecureBootControlEnabled': False
                         }
