@@ -797,6 +797,35 @@ def restore_bios_config(irmc_info, bios_config):
                           session_timeout=session_timeout)
 
 
+def _prepare_skeleton_bios_config(irmc_info):
+    """Prepare bios data to be used in restore function
+
+    :param irmc_info: node info
+    :return: a dict used as a skeleton of bios config data
+        with some required parameter items.
+    """
+    bios_config_data = {
+        'Server': {
+            'SystemConfig': {
+                'BiosConfig': {}
+            }
+        }
+    }
+
+    versions = elcm_profile_get_versions(irmc_info)
+    server_version = versions['Server'].get('@Version')
+    bios_version = \
+        versions['Server']['SystemConfig']['BiosConfig'].get('@Version')
+
+    if server_version:
+        bios_config_data['Server']['@Version'] = server_version
+    if bios_version:
+        bios_config_data['Server']['SystemConfig']['BiosConfig']['@Version'] =\
+            bios_version
+
+    return bios_config_data
+
+
 def get_secure_boot_mode(irmc_info):
     """Get the status if secure boot is enabled or not.
 
@@ -826,17 +855,9 @@ def set_secure_boot_mode(irmc_info, enable):
                    enabled for next boot, else False.
     """
 
-    bios_config_data = {
-        'Server': {
-            'SystemConfig': {
-                'BiosConfig': {
-                    'SecurityConfig': {
-                        'SecureBootControlEnabled': enable
-                    }
-                }
-            }
-        }
-    }
+    bios_config_data = _prepare_skeleton_bios_config(irmc_info)
+    bios_config = bios_config_data['Server']['SystemConfig']['BiosConfig']
+    bios_config['SecurityConfig'] = {'SecureBootControlEnabled': enable}
     restore_bios_config(irmc_info=irmc_info, bios_config=bios_config_data)
 
 
@@ -1074,25 +1095,7 @@ def set_bios_configuration(irmc_info, settings):
     configuration.
     """
 
-    bios_config_data = {
-        'Server': {
-            'SystemConfig': {
-                'BiosConfig': {}
-            }
-        }
-    }
-
-    versions = elcm_profile_get_versions(irmc_info)
-    server_version = versions['Server'].get('@Version')
-    bios_version = \
-        versions['Server']['SystemConfig']['BiosConfig'].get('@Version')
-
-    if server_version:
-        bios_config_data['Server']['@Version'] = server_version
-    if bios_version:
-        bios_config_data['Server']['SystemConfig']['BiosConfig']['@Version'] = \
-            bios_version
-
+    bios_config_data = _prepare_skeleton_bios_config(irmc_info)
     configs = {}
     for setting_param in settings:
         setting_name = setting_param.get("name")
