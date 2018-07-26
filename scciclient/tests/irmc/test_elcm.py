@@ -1052,6 +1052,66 @@ class ELCMTestCase(testtools.TestCase):
         bios_cfg = '{"key": "val"}'
         self._test_restore_bios_config_invalid_input(bios_cfg=bios_cfg)
 
+    @mock.patch.object(elcm, 'elcm_profile_get_versions')
+    def test__prepare_skeleton_bios_config(self, versions_mock):
+        versions_mock.return_value = {
+            'Server': {
+                '@Version': '1.1',
+                '@AnotherKey': 'abc123',
+                'SystemConfig': {
+                    'IrmcConfig': {
+                        '@Version': '2.2'
+                    },
+                    'BiosConfig': {
+                        '@Version': '3.3'
+                    }
+                }
+            }
+        }
+        expected_result = {
+            'Server': {
+                '@Version': '1.1',
+                'SystemConfig': {
+                    'BiosConfig': {
+                        '@Version': '3.3'
+                    }
+                }
+            }
+        }
+
+        result = elcm._prepare_skeleton_bios_config(self.irmc_info)
+        self.assertEqual(expected_result, result)
+        versions_mock.assert_called_once_with(self.irmc_info)
+
+    @mock.patch.object(elcm, 'elcm_profile_get_versions')
+    def test__prepare_skeleton_bios_config_no_versions(self, versions_mock):
+        versions_mock.return_value = {
+            'Server': {
+                'Version': '1.1',
+                'AnotherKey': 'abc123',
+                'SystemConfig': {
+                    'IrmcConfig': {
+                        'Version': '2.2'
+                    },
+                    'BiosConfig': {
+                        'Version': '3.3'
+                    }
+                }
+            }
+        }
+        expected_result = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                    }
+                }
+            }
+        }
+
+        result = elcm._prepare_skeleton_bios_config(self.irmc_info)
+        self.assertEqual(expected_result, result)
+        versions_mock.assert_called_once_with(self.irmc_info)
+
     @mock.patch.object(elcm, 'backup_bios_config')
     def test_get_secure_boot_mode_true(self, backup_bios_config_mock):
         backup_bios_config_mock.return_value = {
@@ -1115,14 +1175,26 @@ class ELCMTestCase(testtools.TestCase):
             irmc_info=self.irmc_info)
 
     @mock.patch.object(elcm, 'restore_bios_config')
-    def test_set_secure_boot_mode_true(self, restore_bios_config_mock):
+    @mock.patch.object(elcm, '_prepare_skeleton_bios_config')
+    def test_set_secure_boot_mode_true(self, prepare_config_mock,
+                                       restore_bios_config_mock):
+        prepare_config_mock.return_value = {
+            'Server': {
+                '@Version': '1.1',
+                'SystemConfig': {
+                    'BiosConfig': {
+                        '@Version': '2.2'
+                    }
+                }
+            }
+        }
         elcm.set_secure_boot_mode(irmc_info=self.irmc_info, enable=True)
         bios_config_data = {
             'Server': {
-                '@Version': '1.01',
+                '@Version': '1.1',
                 'SystemConfig': {
                     'BiosConfig': {
-                        '@Version': '1.01',
+                        '@Version': '2.2',
                         'SecurityConfig': {
                             'SecureBootControlEnabled': True
                         }
@@ -1130,18 +1202,29 @@ class ELCMTestCase(testtools.TestCase):
                 }
             }
         }
+        prepare_config_mock.assert_called_once_with(self.irmc_info)
         restore_bios_config_mock.assert_called_once_with(
             irmc_info=self.irmc_info, bios_config=bios_config_data)
 
     @mock.patch.object(elcm, 'restore_bios_config')
-    def test_set_secure_boot_mode_false(self, restore_bios_config_mock):
+    @mock.patch.object(elcm, '_prepare_skeleton_bios_config')
+    def test_set_secure_boot_mode_false(self, prepare_config_mock,
+                                        restore_bios_config_mock):
+        prepare_config_mock.return_value = {
+            'Server': {
+                'SystemConfig': {
+                    'BiosConfig': {
+                        '@Version': '2.2'
+                    }
+                }
+            }
+        }
         elcm.set_secure_boot_mode(irmc_info=self.irmc_info, enable=False)
         bios_config_data = {
             'Server': {
-                '@Version': '1.01',
                 'SystemConfig': {
                     'BiosConfig': {
-                        '@Version': '1.01',
+                        '@Version': '2.2',
                         'SecurityConfig': {
                             'SecureBootControlEnabled': False
                         }
@@ -1149,6 +1232,7 @@ class ELCMTestCase(testtools.TestCase):
                 }
             }
         }
+        prepare_config_mock.assert_called_once_with(self.irmc_info)
         restore_bios_config_mock.assert_called_once_with(
             irmc_info=self.irmc_info, bios_config=bios_config_data)
 
