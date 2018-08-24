@@ -570,7 +570,7 @@ class SCCITestCase(testtools.TestCase):
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
 
-        r = client(cmd, async=False)
+        r = client(cmd, do_async=False)
         self.assertEqual(r.status_code, 200)
         sleep_mock.assert_called_once_with(5)
 
@@ -598,7 +598,7 @@ class SCCITestCase(testtools.TestCase):
                                  port=self.irmc_port,
                                  auth_method=self.irmc_auth_method,
                                  client_timeout=self.irmc_client_timeout)
-        r = client(cmd, async=False)
+        r = client(cmd, do_async=False)
         self.assertEqual(r.status_code, 200)
         sleep_mock.assert_called_once_with(5)
 
