@@ -68,6 +68,11 @@ class SCCIRAIDNotReady(SCCIError):
         super(SCCIRAIDNotReady, self).__init__(message)
 
 
+class SCCISessionTimeout(SCCIError):
+    def __init__(self, message):
+        super(SCCISessionTimeout, self).__init__(message)
+
+
 """
 List of iRMC S4 supported SCCI commands
 
@@ -275,13 +280,20 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
 
     try:
         header = {'Content-type': 'application/x-www-form-urlencoded'}
-        r = requests.post(protocol + '://' + host + '/config',
+        if kwargs.get('upgrade_type') == 'irmc':
+            config_type = '/irmcupdate?flashSelect=255'
+        elif kwargs.get('upgrade_type') == 'bios':
+            config_type = '/biosupdate'
+        else:
+            config_type = '/config'
+        r = requests.post(protocol + '://' + host + config_type,
                           data=cmd,
                           headers=header,
                           verify=False,
                           timeout=client_timeout,
                           allow_redirects=False,
                           auth=auth_obj)
+
         if not do_async:
             time.sleep(5)
         if DEBUG:
@@ -560,6 +572,53 @@ def get_capabilities_properties(d_info,
         raise SCCIClientError('Capabilities inspection failed: %s' % err)
 
 
+def process_session_status(irmc_info, session_timeout, upgrade_type):
+    """process session for Bios config backup/restore or RAID config operation
+
+    :param irmc_info: node info
+    :param session_timeout: session timeout
+    :param upgrade_type: flag to check upgrade with bios or irmc
+    :return: a dict with following values:
+        {
+            'upgrade_message': <Message of firmware upgrade mechanism>,
+            'upgrade_status'
+        }
+    """
+    session_expiration = time.time() + session_timeout
+
+    while time.time() < session_expiration:
+        # Get session status to check
+        session = get_firmware_upgrade_status(irmc_info, upgrade_type)
+
+        status = session.find("./Value").text
+        severity = session.find("./Severity").text
+        message = session.find("./Message").text
+
+        if severity == 'Information' and status != '0':
+            # Sleep a bit
+            time.sleep(10)
+        elif severity == 'Error':
+            result = {}
+            result['upgrade_message'] = message
+            result['upgrade_status'] = severity
+            return result
+        elif severity == 'Information' and status == '0':
+            result = {}
+            result['upgrade_message'] = message
+            result['upgrade_status'] = severity
+            result['upgrade_value'] = status
+            return result
+        else:
+            # Error occurred, get session log to see what happened
+            session_log = message
+            raise SCCIClientError('Failed to set firmware upgrade. '
+                                  'Session log is %s.' % session_log)
+
+    else:
+        raise SCCISessionTimeout('Failed to time out mechanism with %s.'
+                                 % session_expiration)
+
+
 def get_raid_fgi_status(report):
     """Gather fgi(foreground initialization) information of raid configuration
 
@@ -590,3 +649,65 @@ def get_raid_fgi_status(report):
         fgi_status.update({name: status})
 
     return fgi_status
+
+
+def get_firmware_upgrade_status(irmc_info, upgrade_type):
+    """get firmware upgrade status of bios or irmc
+
+    :param irmc_info: dict of iRMC params to access the server node
+        {
+          'irmc_address': host,
+          'irmc_username': user_id,
+          'irmc_password': password,
+          'irmc_port': 80 or 443, default is 443,
+          'irmc_auth_method': 'basic' or 'digest', default is 'digest',
+          'irmc_client_timeout': timeout, default is 60,
+          ...
+        }
+    :param upgrade_type: flag to check upgrade with bios or irmc
+    :raises: ISCCIInvalidInputError if port and/or auth_method params
+             are invalid
+    :raises: SCCIClientError if SCCI failed
+    """
+
+    host = irmc_info.get('irmc_address')
+    userid = irmc_info.get('irmc_username')
+    password = irmc_info.get('irmc_password')
+    port = irmc_info.get('irmc_port', 443)
+    auth_method = irmc_info.get('irmc_auth_method', 'digest')
+    client_timeout = irmc_info.get('irmc_client_timeout', 60)
+
+    auth_obj = None
+    try:
+        protocol = {80: 'http', 443: 'https'}[port]
+        auth_obj = {
+            'basic': requests.auth.HTTPBasicAuth(userid, password),
+            'digest': requests.auth.HTTPDigestAuth(userid, password)
+        }[auth_method.lower()]
+    except KeyError:
+        raise SCCIInvalidInputError(
+            ("Invalid port %(port)d or " +
+             "auth_method for method %(auth_method)s") %
+            {'port': port, 'auth_method': auth_method})
+    try:
+        if upgrade_type == 'bios':
+            upgrade_type = '/biosprogress'
+        elif upgrade_type == 'irmc':
+            upgrade_type = '/irmcprogress'
+        r = requests.get(protocol + '://' + host + upgrade_type,
+                         verify=False,
+                         timeout=(10, client_timeout),
+                         allow_redirects=False,
+                         auth=auth_obj)
+
+        if r.status_code not in (200, 201):
+            raise SCCIClientError(
+                ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
+                 str(r.status_code)))
+
+        upgrade_status_xml = ET.fromstring(r.text)
+        return upgrade_status_xml
+    except ET.ParseError as parse_error:
+        raise SCCIClientError(parse_error)
+    except requests.exceptions.RequestException as requests_exception:
+        raise SCCIClientError(requests_exception)
