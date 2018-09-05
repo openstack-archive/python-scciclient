@@ -21,11 +21,17 @@ import xml.etree.ElementTree as ET
 
 import mock
 from requests_mock.contrib import fixture as rm_fixture
+import six
+import six.moves.builtins as __builtin__
 import testtools
 
 from scciclient.irmc import ipmi
 from scciclient.irmc import scci
 from scciclient.irmc import snmp
+
+if six.PY3:
+    import io
+    file = io.BytesIO
 
 
 class SCCITestCase(testtools.TestCase):
@@ -912,3 +918,260 @@ class SCCITestCase(testtools.TestCase):
         fgi_status_expect = {'0': 'Idle'}
         result = scci.get_raid_fgi_status(report_fake)
         self.assertEqual(result, fgi_status_expect)
+
+    @mock.patch('scciclient.irmc.scci.requests')
+    def test_fail_get_bios_firmware_status(self, mock_requests):
+        mock_requests.get.return_value = mock.Mock(
+            status_code=404,
+            text="""</head>
+            <body>
+            <div id="main">
+                <div class="content message">
+                    <div id="alert_icon">
+                    </div>
+                    <div id="msg_title" class="title">
+                        File not found  <!-- This tag is OPTIONAL and is the
+                        title eg. 404 - File not found -->
+                    </div>
+                </div>
+            </div>
+            </body>
+            </html>""")
+        upgrade_type = 'biosss'
+        self.assertRaises(scci.SCCIClientError,
+                          scci.get_firmware_upgrade_status, self.irmc_info,
+                          upgrade_type=upgrade_type)
+
+    @mock.patch('scciclient.irmc.scci.requests')
+    def test_success_get_bios_firmware_status(self, mock_requests):
+        mock_requests.get.return_value = mock.Mock(
+            return_value='ok',
+            status_code=200,
+            text="""<?xml version="1.0" encoding="UTF-8"?>
+            <Status>
+            <Value>0</Value>
+            <Severity>Information</Severity>
+            <Message>No Error</Message>
+            </Status>""")
+        expected_status = "0"
+        expected_severity = "Information"
+        expected_message = "No Error"
+        upgrade_type = 'bios'
+        result = scci.get_firmware_upgrade_status(self.irmc_info, upgrade_type)
+        self.assertEqual(expected_status, result.find("./Value").text)
+        self.assertEqual(expected_severity, result.find("./Severity").text)
+        self.assertEqual(expected_message, result.find("./Message").text)
+
+    @mock.patch('scciclient.irmc.scci.requests')
+    def test_fail_get_irmc_firmware_status(self, mock_requests):
+        mock_requests.get.return_value = mock.Mock(
+            status_code=404,
+            text="""</head>
+            <body>
+            <div id="main">
+                <div class="content message">
+                    <div id="alert_icon">
+                    </div>
+                    <div id="msg_title" class="title">
+                        File not found  <!-- This tag is OPTIONAL and is the
+                        title eg. 404 - File not found -->
+                    </div>
+                </div>
+            </div>
+            </body>
+            </html>""")
+        upgrade_type = 'irmcccc'
+        self.assertRaises(scci.SCCIClientError,
+                          scci.get_firmware_upgrade_status, self.irmc_info,
+                          upgrade_type=upgrade_type)
+
+    @mock.patch('scciclient.irmc.scci.requests')
+    def test_success_get_irmc_firmware_status(self, mock_requests):
+        mock_requests.get.return_value = mock.Mock(
+            return_value='ok',
+            status_code=200,
+            text="""<?xml version="1.0" encoding="UTF-8"?>
+            <Status>
+            <Value>0</Value>
+            <Severity>Information</Severity>
+            <Message>No Error</Message>
+            </Status>""")
+        expected_status = "0"
+        expected_severity = "Information"
+        expected_message = "No Error"
+        upgrade_type = 'irmc'
+        result = scci.get_firmware_upgrade_status(self.irmc_info, upgrade_type)
+        self.assertEqual(expected_status, result.find("./Value").text)
+        self.assertEqual(expected_severity, result.find("./Severity").text)
+        self.assertEqual(expected_message, result.find("./Message").text)
+
+    @mock.patch('scciclient.irmc.scci.get_firmware_upgrade_status')
+    def test_failed_process_session_bios_status(self, mock_status):
+        session_timeout = 180
+        upgrade_type = 'bios'
+        # Fake status from server
+        status_fake = ET.Element(self)
+        status_fake.append(ET.Element("Value", name="Value"))
+        status_fake.append(ET.Element("Severity", name="Severity"))
+        status_fake.append(ET.Element("Message", name="Message"))
+        status_fake.find("./Value").text = '0'
+        status_fake.find("./Severity").text = 'Error'
+        status_fake.find("./Message").text = 'File not provided'
+
+        mock_status.return_value = status_fake
+        expected_status = 'Error'
+        result = scci.process_session_status(self.irmc_info, session_timeout,
+                                             upgrade_type)
+        self.assertEqual(expected_status, result['upgrade_status'])
+
+    @mock.patch('scciclient.irmc.scci.get_firmware_upgrade_status')
+    def test_success_process_session_bios_status(self, mock_status):
+        session_timeout = 180
+        upgrade_type = 'bios'
+        # Fake status from server
+        status_fake = ET.Element(self)
+        status_fake.append(ET.Element("Value", name="Value"))
+        status_fake.append(ET.Element("Severity", name="Severity"))
+        status_fake.append(ET.Element("Message", name="Message"))
+        status_fake.find("./Value").text = '9'
+        status_fake.find("./Severity").text = 'Information'
+        status_fake.find("./Message").text = 'FLASH successful'
+
+        mock_status.return_value = status_fake
+        expected_status = 'Complete'
+        result = scci.process_session_status(self.irmc_info, session_timeout,
+                                             upgrade_type)
+        self.assertEqual(expected_status, result['upgrade_status'])
+
+    @mock.patch('scciclient.irmc.scci.get_firmware_upgrade_status')
+    def test_failed_process_session_irmc_status(self, mock_status):
+        session_timeout = 180
+        upgrade_type = 'irmc'
+        # Fake status from server
+        status_fake = ET.Element(self)
+        status_fake.append(ET.Element("Value", name="Value"))
+        status_fake.append(ET.Element("Severity", name="Severity"))
+        status_fake.append(ET.Element("Message", name="Message"))
+        status_fake.find("./Value").text = '0'
+        status_fake.find("./Severity").text = 'Error'
+        status_fake.find("./Message").text = 'File not provided'
+
+        mock_status.return_value = status_fake
+        expected_status = 'Error'
+        result = scci.process_session_status(self.irmc_info, session_timeout,
+                                             upgrade_type)
+        self.assertEqual(expected_status, result['upgrade_status'])
+
+    @mock.patch('scciclient.irmc.scci.get_firmware_upgrade_status')
+    def test_success_process_session_irmc_status(self, mock_status):
+        session_timeout = 180
+        upgrade_type = 'irmc'
+        # Fake status from server
+        status_fake = ET.Element(self)
+        status_fake.append(ET.Element("Value", name="Value"))
+        status_fake.append(ET.Element("Severity", name="Severity"))
+        status_fake.append(ET.Element("Message", name="Message"))
+        status_fake.find("./Value").text = '9'
+        status_fake.find("./Severity").text = 'Information'
+        status_fake.find("./Message").text = 'FLASH successful'
+
+        mock_status.return_value = status_fake
+        expected_status = 'Complete'
+        result = scci.process_session_status(self.irmc_info, session_timeout,
+                                             upgrade_type)
+        self.assertEqual(expected_status, result['upgrade_status'])
+
+    @mock.patch.object(__builtin__, 'open', autospec=True)
+    def test_create_bios_firmware_upgrade(self, open_mock):
+        upgrade_type = 'bios'
+        self.requests_mock.post("http://" + self.irmc_address + "/biosupdate",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
+        bios_input = '/media/DATA/D3099-B1.UPC'
+        open_mock.return_value = mock.mock_open(read_data="file").return_value
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout,
+                                 upgrade_type=upgrade_type)
+        r = client(bios_input)
+        self.assertEqual(r.status_code, 200)
+
+    @mock.patch.object(__builtin__, 'open', side_effect=IOError, autospec=True)
+    def test_create_fail_bios_firmware_upgrade(self, open_mock):
+        upgrade_type = 'bios'
+        self.requests_mock.post("http://" + self.irmc_address + "/biosupdate",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                <Value>6</Value>
+                                <Severity>Error</Severity>
+                                <Message>File not provided</Message>
+                                </Status>
+                                """)
+        # Fake wrong file directory
+        bios_input = '/media/DATA/D3099-B101.UPC'
+        open_mock.return_value = mock.mock_open(read_data="file").return_value
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout,
+                                 upgrade_type=upgrade_type)
+
+        self.assertRaises(scci.SCCIClientError, client, bios_input)
+
+    @mock.patch.object(__builtin__, 'open', autospec=True)
+    def test_create_irmc_firmware_upgrade(self, open_mock):
+        upgrade_type = 'irmc'
+        self.requests_mock.post("http://" + self.irmc_address +
+                                "/irmcupdate?flashSelect=255",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                    <Value>0</Value>
+                                    <Severity>Information</Severity>
+                                    <Message>No Error</Message>
+                                </Status>""")
+        irmc_input = '/media/DATA/TX2540M1.bin'
+        open_mock.return_value = mock.mock_open(read_data="file").return_value
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout,
+                                 upgrade_type=upgrade_type)
+        r = client(irmc_input)
+        self.assertEqual(r.status_code, 200)
+
+    @mock.patch.object(__builtin__, 'open', side_effect=IOError, autospec=True)
+    def test_create_fail_irmc_firmware_upgrade(self, open_mock):
+        upgrade_type = 'irmc'
+        self.requests_mock.post("http://" + self.irmc_address +
+                                "/irmcupdate?flashSelect=255",
+                                text="""<?xml version="1.0" encoding="UTF-8"?>
+                                <Status>
+                                <Value>6</Value>
+                                <Severity>Error</Severity>
+                                <Message>File not provided</Message>
+                                </Status>
+                                """)
+        # Fake wrong file directory
+        irmc_input = '/media/DATA/TX2540M1111.bin'
+        mock_file_handle = mock.MagicMock(spec=file)
+        open_mock.return_value = mock_file_handle
+        client = scci.get_client(self.irmc_address,
+                                 self.irmc_username,
+                                 self.irmc_password,
+                                 port=self.irmc_port,
+                                 auth_method=self.irmc_auth_method,
+                                 client_timeout=self.irmc_client_timeout,
+                                 upgrade_type=upgrade_type)
+
+        self.assertRaises(scci.SCCIClientError, client, irmc_input)
