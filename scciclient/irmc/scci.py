@@ -273,6 +273,17 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
              "auth_method for method %(auth_method)s") %
             {'port': port, 'auth_method': auth_method})
 
+    # For EJECT command, validate parameters to handle abnormal case
+    if check_eject_cd_cmd(cmd):
+        if validate_params_cd_fd("cmd_cd", protocol, host, auth_obj,
+                                 do_async, client_timeout):
+            return
+
+    if check_eject_fd_cmd(cmd):
+        if validate_params_cd_fd("cmd_fd", protocol, host, auth_obj,
+                                 do_async, client_timeout):
+            return
+
     try:
         header = {'Content-type': 'application/x-www-form-urlencoded'}
         r = requests.post(protocol + '://' + host + '/config',
@@ -311,6 +322,115 @@ def scci_cmd(host, userid, password, cmd, port=443, auth_method='basic',
 
     except requests.exceptions.RequestException as requests_exception:
         raise SCCIClientError(requests_exception)
+
+
+def validate_params_cd_fd(cmd_type, protocol, host, auth_obj,
+                          do_async, client_timeout):
+    """
+    To validate parameters of CD/DVD or FD Image Virtual Media in iRMC
+
+    :param cmd_type: command type has value switch between "cmd_cd" or "cmd_fd"
+    :param protocol:
+    :param host: hostname or IP of iRMC
+    :param auth_obj: irmc userid/password
+    :param do_async: async call if True, sync call otherwise
+    :param client_timeout: timeout for SCCI operations
+    :return: true if one of the param is null. Otherwise, return false.
+    """
+
+    if cmd_type == "cmd_cd":
+        oe_image_server = "1A60"
+        oe_image_server_share_name = "1A65"
+        oe_image_name = "1A66"
+    else:
+        oe_image_server = "1A50"
+        oe_image_server_share_name = "1A55"
+        oe_image_name = "1A56"
+
+    try:
+        param = {'P45': '1', 'SAVE_DATA': '1'}
+        header = {'Content-type': 'application/x-www-form-urlencoded'}
+        r = requests.get(protocol + '://' + host + '/iRMC_Settings.pre',
+                         params=param,
+                         headers=header,
+                         verify=False,
+                         timeout=client_timeout,
+                         allow_redirects=False,
+                         auth=auth_obj)
+        if not do_async:
+            time.sleep(5)
+
+        if DEBUG:
+            print("---------------------------")
+            print("Current iRMC configuration:")
+            print(r.url)
+
+        if r.status_code not in (200, 201):
+            raise SCCIClientError(
+                ('HTTP PROTOCOL ERROR, STATUS CODE = %s' %
+                 str(r.status_code)))
+
+        result = r.text
+        cmdseq = ET.fromstring(result)
+        cfg_dict = {}
+        for cmd_tag in cmdseq.iter(tag='CMD'):
+            oe = cmd_tag.get('OE')
+            data = cmd_tag.find('DATA').text
+            cfg_dict[oe] = data
+
+        if DEBUG:
+            print("Server: ", cfg_dict[oe_image_server])
+            print("Share Name: ", cfg_dict[oe_image_server_share_name])
+            print("Image Name: ", cfg_dict[oe_image_name])
+            print("---------------------------")
+
+        if (cfg_dict[oe_image_server] is None) or \
+                (cfg_dict[oe_image_server_share_name] is None) or \
+                (cfg_dict[oe_image_name] is None):
+            return True
+
+    except ET.ParseError as parse_error:
+        raise SCCIClientError(parse_error)
+    except requests.exceptions.RequestException as requests_exception:
+        raise SCCIClientError(requests_exception)
+    return False
+
+
+def check_eject_cd_cmd(xml_cmd):
+    """ To check command is MOUNT or UNMOUNT
+
+    :param xml_cmd: the command
+    :return: true if this is UNMOUNT command. Otherwise, return false.
+    """
+
+    try:
+        cmdseq = ET.fromstring(xml_cmd.strip())
+        cmd = cmdseq.find("./CMD")
+        data = cmd.find("./DATA")
+        if cmd.get("OC") == "ConnectRemoteCdImage" and \
+                cmd.get("Type") == "SET" and data.text == "0":
+            return True
+    except ET.ParseError as parse_error:
+        raise SCCIClientError(parse_error)
+    return False
+
+
+def check_eject_fd_cmd(xml_cmd):
+    """ To check command is MOUNT or UNMOUNT
+
+    :param xml_cmd: the command
+    :return: true if this is UNMOUNT command. Otherwise, return false.
+    """
+    try:
+        cmdseq = ET.fromstring(xml_cmd.strip())
+        cmd = cmdseq.find("./CMD")
+        data = cmd.find("./DATA")
+        if cmd.get("OC") == "ConnectRemoteFdImage" and \
+                cmd.get("Type") == "SET" and data.text == "0":
+            return True
+    except ET.ParseError as parse_error:
+        raise SCCIClientError(parse_error)
+    return False
 
 
 def get_client(host, userid, password, port=443, auth_method='basic',
