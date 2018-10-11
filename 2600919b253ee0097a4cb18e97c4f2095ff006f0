@@ -1,0 +1,9 @@
+Code-Review+1: 98k <18552437190@163.com>
+Code-Review+2: Hironori Shiina <shiina.hironori@jp.fujitsu.com>
+Workflow+1: Hironori Shiina <shiina.hironori@jp.fujitsu.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 11 Oct 2018 07:57:57 +0000
+Reviewed-on: https://review.openstack.org/606402
+Project: openstack/python-scciclient
+Branch: refs/heads/master
