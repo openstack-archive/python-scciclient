@@ -1014,7 +1014,7 @@ def create_raid_configuration(irmc_info, target_raid_config):
     # create new RAID config.
     raid_adapter = get_raid_adapter(irmc_info)
     logical_drives = raid_adapter['Server']['HWConfigurationIrmc'][
-        'Adapters']['RAIDAdapter'][0]['LogicalDrives']
+        'Adapters']['RAIDAdapter'][0].get('LogicalDrives')
     session_timeout = irmc_info.get('irmc_raid_session_timeout',
                                     RAID_CONFIG_SESSION_TIMEOUT)
     if logical_drives is not None:
