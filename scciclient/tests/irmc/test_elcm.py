@@ -69,6 +69,54 @@ class ELCMTestCase(testtools.TestCase):
             }
         }
 
+        self.fake_raid_adapter = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': [
+                                        {
+                                            '@Number': 0,
+                                            '@ConfigurationType': 'Setting',
+                                            'PhysicalDiskRefs': {
+                                                'PhysicalDiskRef': [
+                                                    {
+                                                        '@Number': '0'
+                                                    },
+                                                    {
+                                                        '@Number': '1'
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1',
+                                            'InitMode': 'slow',
+                                            'Size': {
+                                                '@Unit': 'GB',
+                                                '#text': 100
+                                            },
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+
     def _create_server_url(self, path, port=None):
         scheme = 'unknown'
 
@@ -1151,6 +1199,47 @@ class ELCMTestCase(testtools.TestCase):
         }
         restore_bios_config_mock.assert_called_once_with(
             irmc_info=self.irmc_info, bios_config=bios_config_data)
+
+    @mock.patch.object(elcm, 'get_raid_adapter')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_without_logical_drives(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        raid_info_mock.return_value = self.raid_info
+        target_raid_config = {
+            'logical_disks':
+                [
+                    {
+                        'size_gb': 100,
+                        'raid_level': '1',
+                    }
+                ]
+        }
+        raid_adapter = self.fake_raid_adapter
+        del raid_adapter['Server']['HWConfigurationIrmc'][
+            'Adapters']['RAIDAdapter'][0]['LogicalDrives']
+        elcm.get_raid_adapter.return_value = raid_adapter
+
+        elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        # Check raid_input data
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+        elcm_profile_set_mock.assert_called_once_with(
+            self.irmc_info, raid_adapter)
 
     @mock.patch.object(elcm, 'get_raid_adapter')
     @mock.patch.object(elcm, 'elcm_profile_set')
