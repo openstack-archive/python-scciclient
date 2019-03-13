@@ -1155,6 +1155,76 @@ class ELCMTestCase(testtools.TestCase):
     @mock.patch.object(elcm, 'get_raid_adapter')
     @mock.patch.object(elcm, 'elcm_profile_set')
     @mock.patch.object(elcm, '_process_session_data')
+    def test_create_raid_config_without_logical_drives(
+            self, session_mock, elcm_profile_set_mock, raid_info_mock):
+        elcm_profile_set_mock.return_value = {
+            "Session": {
+                "Id": 1,
+                "A_Param": "abc123"
+            }
+        }
+        session_id = 1
+        session_timeout = 1800
+        operation = 'CONFIG_RAID'
+
+        target_raid_config = {
+            'logical_disks': [
+                {
+                    'size_gb': 100,
+                    'raid_level': '1',
+                }
+            ]
+        }
+        expected_input = {
+            'Server': {
+                'HWConfigurationIrmc': {
+                    '@Processing': 'execute',
+                    'Adapters': {
+                        'RAIDAdapter': [
+                            {
+                                'Arrays': {
+                                    'Array': []
+                                },
+                                'LogicalDrives': {
+                                    'LogicalDrive': [
+                                        {
+                                            '@Number': 0,
+                                            '@Action': 'Create',
+                                            'RaidLevel': '1',
+                                            'InitMode': 'slow',
+                                            'Size': {
+                                                '@Unit': 'GB',
+                                                '#text': 100
+                                            },
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    '@Version': '1.00'
+                },
+                '@Version': '1.01'
+            }
+        }
+        # In case of "LogicalDrives" doesn't exist
+        del self.raid_info['Server']['HWConfigurationIrmc'][
+            'Adapters']['RAIDAdapter'][0]['LogicalDrives']
+        raid_info_mock.return_value = self.raid_info
+
+        elcm.create_raid_configuration(
+            self.irmc_info, target_raid_config=target_raid_config)
+
+        session_mock.assert_called_once_with(self.irmc_info, operation,
+                                             session_id, session_timeout)
+        # Check raid_input data
+        raid_info_mock.assert_called_once_with(self.irmc_info)
+        elcm_profile_set_mock.assert_called_once_with(
+            self.irmc_info, expected_input)
+
+    @mock.patch.object(elcm, 'get_raid_adapter')
+    @mock.patch.object(elcm, 'elcm_profile_set')
+    @mock.patch.object(elcm, '_process_session_data')
     def test_create_raid_config_without_arrays_info_and_physical_disks(
             self, session_mock, elcm_profile_set_mock, raid_info_mock):
 
